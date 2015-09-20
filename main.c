@@ -64,24 +64,21 @@ task main(){
 	                 x + z - y,
 	                 x - z + y);
 
-	  float newSpeed = shooterSpeed;
-
   	if (vexRT[joyShooterZero] == 1) {
 	  	shooterSpeed = 0;
-	  	newSpeed = 0;
+	  	setShooterMotors(0);
+
   	}else if (vexRT[joyShooterIncU] == 1) {
 	    shooterSpeed += 10;
-	    newSpeed = shooterSpeed;
-   }
+	    setShooterMotors(shooterSpeed);
 
-	  if (vexRT[joyShooterFull] == 1) {
-		  newSpeed = 127;
+    }else if (vexRT[joyShooterFull] == 1) {
+		  setShooterMotors(127);
+
 	  }else if (vexRT[joyShooterIncD] == 1) {
 	    shooterSpeed -= 10;
-	    newSpeed = shooterSpeed;
+	    setShooterMotors(shooterSpeed);
 	   }
-
-	  setShooterMotors(newSpeed);
 
   }
 
