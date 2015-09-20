@@ -13,6 +13,17 @@
 //Constants
 #define targetShooterPos = 127;
 
+
+#define joyDriveA = Ch1
+#define joyDriveB = Ch4
+#define joyDriveC = Ch3
+
+#define joyShooterZero = Btn5U
+#define joyShooterIncU = Btn6D
+#define joyShooterIncD = Btn5D
+#define joyShooterFull = Btn6U
+
+
 float shooterSpeed = 0;
 
 //Helper function for setting all drive motors in one command
@@ -37,9 +48,9 @@ task main()
 {
 
 while(true){
-	float x = vexRT[Ch1];
-	float y = vexRT[Ch4];
-	float z = vexRT[Ch3];
+	float x = vexRT[joyDriveA];
+	float y = vexRT[joyDriveB];
+	float z = vexRT[joyDriveC];
 	setDriveMotors(x + z + y,
 	             x - z - y,
 	             x + z - y,
@@ -47,17 +58,17 @@ while(true){
 
 	float newSpeed = shooterSpeed;
 
-	if (vexRT[Btn5U] == 1) {
+	if (vexRT[joyShooterZero] == 1) {
 		shooterSpeed = 0;
 		newSpeed = 0;
-	}else if (vexRT[Btn5D] == 1) {
+	}else if (vexRT[joyShooterIncU] == 1) {
 	  shooterSpeed += 10;
 	  newSpeed = shooterSpeed;
    }
 
-	if (vexRT[Btn5U] == 1) {
+	if (vexRT[joyShooterFull] == 1) {
 		newSpeed = 127;
-	}else if (vexRT[Btn5D] == 1) {
+	}else if (vexRT[joyShooterIncD] == 1) {
 	  shooterSpeed -= 10;
 	  newSpeed = shooterSpeed;
 	 }
