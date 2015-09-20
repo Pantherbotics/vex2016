@@ -64,22 +64,25 @@ task main(){
 	                 x + z - y,
 	                 x - z + y);
 
+	  //bring the shooter to a full stop permanently
   	if (vexRT[joyShooterZero] == 1) {
 	  	shooterSpeed = 0;
 	  	setShooterMotors(0);
 
+	  //Increment the motor speed by 10
   	}else if (vexRT[joyShooterIncU] == 1) {
 	    shooterSpeed += 10;
 	    setShooterMotors(shooterSpeed);
 
-    }else if (vexRT[joyShooterFull] == 1) {
-		  setShooterMotors(127);
-
+	  //Decrement the motor speed by 10
 	  }else if (vexRT[joyShooterIncD] == 1) {
 	    shooterSpeed -= 10;
 	    setShooterMotors(shooterSpeed);
-	   }
 
-  }
+	  //Set the shooter speed to the maximum temporarily
+    }else if (vexRT[joyShooterFull] == 1) {
+		  setShooterMotors(127);
 
-}
+    } //End shooter button if statements
+  } //End main program loop
+} //End main subroutine
