@@ -16,7 +16,7 @@
 float shooterSpeed = 0;
 
 //Helper function for setting all drive motors in one command
-void setAllMotors(float fL, float fR, float bL, float bR) {
+void setDriveMotors(float fL, float fR, float bL, float bR) {
    motor[mFrontLeft] = fL;
    motor[mFrontRight] = fR;
    motor[mBackLeft] = bL;
@@ -40,7 +40,7 @@ while(true){
 	float x = vexRT[Ch1];
 	float y = vexRT[Ch4];
 	float z = vexRT[Ch3];
-	setAllMotors(x + z + y,
+	setDriveMotors(x + z + y,
 	             x - z - y,
 	             x + z - y,
 	             x - z + y);
