@@ -13,15 +13,15 @@
 
 //--------------------Button Mapping--------------------
 //Drive axis
-#define joyDriveA = Ch1 //First axis for the drive joysticks
-#define joyDriveB = Ch4 //Second axis for the drive joysticks
-#define joyDriveC = Ch3 //Third axis for the drive joysticks
+#define joyDriveA Ch1 //First axis for the drive joysticks
+#define joyDriveB Ch4 //Second axis for the drive joysticks
+#define joyDriveC Ch3 //Third axis for the drive joysticks
 
 //Shooter buttons
-#define joyShooterZero = Btn5U //Set the shooter speed to zero (E-STOP)
-#define joyShooterIncU = Btn6D //Increment shooter speed
-#define joyShooterIncD = Btn5D //Decrement the shooter speed
-#define joyShooterFull = Btn6U //Set the shooter speed to max (127)
+#define joyShooterZero Btn5U //Set the shooter speed to zero (E-STOP)
+#define joyShooterIncU Btn6D //Increment shooter speed
+#define joyShooterIncD Btn5D //Decrement the shooter speed
+#define joyShooterFull Btn6U //Set the shooter speed to max (127)
 
 
 //--------------------Constants--------------------
