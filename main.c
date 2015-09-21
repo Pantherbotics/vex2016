@@ -29,10 +29,10 @@
 
 
 //--------------------Variables--------------------
-float shooterSpeed = 0; //stores the current set speed for the shooter motors
+int shooterSpeed = 0; //stores the current set speed for the shooter motors
 
 //Helper function for setting all drive motors in one command
-void setDriveMotors(float fL, float fR, float bL, float bR) {
+void setDriveMotors(int fL, int fR, int bL, int bR) {
    motor[mFrontLeft] = fL;
    motor[mFrontRight] = fR;
    motor[mBackLeft] = bL;
@@ -40,7 +40,7 @@ void setDriveMotors(float fL, float fR, float bL, float bR) {
 }
 
 //Helper function for setting all shooter motors in one command, with correct polarity
-void setShooterMotors(float power) {
+void setShooterMotors(int power) {
    motor[mShooter2] = power;
    motor[mShooter3] = -power;
    motor[mShooter4] = -power;
@@ -54,9 +54,9 @@ task main(){
 
   //Main operator control loop
   while(true){
-	  float x = vexRT[joyDriveA];
-	  float y = vexRT[joyDriveB];
-  	float z = vexRT[joyDriveC];
+	  int x = vexRT[joyDriveA];
+	  int y = vexRT[joyDriveB];
+  	int z = vexRT[joyDriveC];
 
   	//Basic configuration for 4 meccanum wheel drive
   	setDriveMotors(x + z + y,
