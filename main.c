@@ -26,10 +26,10 @@
 
 //--------------------Constants--------------------
 #define targetShooterPos = 127; //Optimal speed for firing
-
+float shooterIncrement = 0.01
 
 //--------------------Variables--------------------
-int shooterSpeed = 0; //stores the current set speed for the shooter motors
+float shooterSpeed = 0; //stores the current set speed for the shooter motors
 
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
@@ -71,18 +71,20 @@ task main(){
 
 	  //Increment the motor speed by 10
   	}else if (vexRT[joyShooterIncU] == 1) {
-	    shooterSpeed += 10;
+	    shooterSpeed += shooterIncrement;
 	    setShooterMotors(shooterSpeed);
 
 	  //Decrement the motor speed by 10
 	  }else if (vexRT[joyShooterIncD] == 1) {
-	    shooterSpeed -= 10;
+	    shooterSpeed -= shooterIncrement;
 	    setShooterMotors(shooterSpeed);
 
 	  //Set the shooter speed to the maximum temporarily
     }else if (vexRT[joyShooterFull] == 1) {
 		  setShooterMotors(127);
 
+    }else{
+		  setShooterMotors(shooterSpeed);
     } //End shooter button if statements
   } //End main program loop
 } //End main subroutine
