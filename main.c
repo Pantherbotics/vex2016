@@ -26,7 +26,8 @@
 
 //--------------------Constants--------------------
 #define targetShooterPos = 127; //Optimal speed for firing
-float shooterIncrement = 0.01
+
+float shooterIncrement = 0.01; //How much to increment or decrement speed each tick
 
 //--------------------Variables--------------------
 float shooterSpeed = 0; //stores the current set speed for the shooter motors
