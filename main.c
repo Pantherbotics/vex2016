@@ -66,17 +66,39 @@ task autonomous()
 
 task usercontrol()
 {
-	// User control code here, inside the loop
+	//Main operator control loop
+  while(true){
+	  int x = vexRT[joyDriveA];
+	  int y = vexRT[joyDriveB];
+  	int z = vexRT[joyDriveC];
 
-	while (true)
-	{
-	  // This is the main execution loop for the user control program. Each time through the loop
-	  // your program should update motor + servo values based on feedback from the joysticks.
+  	//Basic configuration for 4 meccanum wheel drive
+  	setDriveMotors(x + z + y,
+	                 x - z - y,
+	                 x + z - y,
+	                 x - z + y);
 
-	  // .....................................................................................
-	  // Insert user code here. This is where you use the joystick values to update your motors, etc.
-	  // .....................................................................................
+	  //bring the shooter to a full stop permanently
+  	if (vexRT[joyShooterZero] == 1) {
+	  	shooterSpeed = 0;
+	  	setShooterMotors(0);
 
-	  UserControlCodePlaceholderForTesting(); // Remove this function call once you have "real" code.
-	}
+	  //Increment the motor speed by 10
+  	}else if (vexRT[joyShooterIncU] == 1) {
+	    shooterSpeed += shooterIncrement;
+	    setShooterMotors(shooterSpeed);
+
+	  //Decrement the motor speed by 10
+	  }else if (vexRT[joyShooterIncD] == 1) {
+	    shooterSpeed -= shooterIncrement;
+	    setShooterMotors(shooterSpeed);
+
+	  //Set the shooter speed to the maximum temporarily
+    }else if (vexRT[joyShooterFull] == 1) {
+		  setShooterMotors(127);
+
+    }else{
+		  setShooterMotors(shooterSpeed);
+    } //End shooter button if statements
+  } //End main program loop
 }
