@@ -18,6 +18,28 @@
 
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
+//--------------------Button Mapping--------------------
+//Drive axis
+#define joyDriveA Ch1 //First axis for the drive joysticks
+#define joyDriveB Ch4 //Second axis for the drive joysticks
+#define joyDriveC Ch3 //Third axis for the drive joysticks
+
+//Shooter buttons
+#define joyShooterZero Btn5U //Set the shooter speed to zero (E-STOP)
+#define joyShooterIncU Btn6D //Increment shooter speed
+#define joyShooterIncD Btn5D //Decrement the shooter speed
+#define joyShooterFull Btn6U //Set the shooter speed to max (127)
+
+
+//--------------------Constants--------------------
+#define targetShooterPos = 127; //Optimal speed for firing
+
+float shooterIncrement = 0.01; //How much to increment or decrement speed each tick
+
+//--------------------Variables--------------------
+float shooterSpeed = 0; //stores the current set speed for the shooter motors
+
+
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
    motor[mFrontLeft] = fL;
