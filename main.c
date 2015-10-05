@@ -15,10 +15,9 @@
 #pragma competitionControl(Competition)
 #pragma autonomousDuration(20)
 #pragma userControlDuration(120)
-
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
-//--------------------Button Mapping--------------------
+//--------------------Button Mapping--------------------\\
 //Drive axis
 #define joyDriveA Ch1 //First axis for the drive joysticks
 #define joyDriveB Ch4 //Second axis for the drive joysticks
@@ -31,15 +30,15 @@
 #define joyShooterFull Btn6U //Set the shooter speed to max (127)
 
 
-//--------------------Constants--------------------
+//--------------------Constants--------------------\\
 #define targetShooterPos = 127; //Optimal speed for firing
 
 float shooterIncrement = 0.01; //How much to increment or decrement speed each tick
 
-//--------------------Variables--------------------
+//--------------------Variables--------------------\\
 float shooterSpeed = 0; //stores the current set speed for the shooter motors
 
-
+//--------------------Helper Functions-------------\\
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
    motor[mFrontLeft] = fL;
@@ -58,54 +57,18 @@ void setShooterMotors(int power) {
    motor[mShooter9] = power;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                          Pre-Autonomous Functions
-//
-// You may want to perform some actions before the competition starts. Do them in the
-// following function.
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-
-void pre_auton()
-{
-  // Set bStopTasksBetweenModes to false if you want to keep user created tasks running between
-  // Autonomous and Tele-Op modes. You will need to manage all user created tasks if set to false.
-  bStopTasksBetweenModes = true;
-
-	// All activities that occur before the competition starts
-	// Example: clearing encoders, setting servo positions, ...
+//--------------------Initalization Code--------------------\\
+void pre_auton() {
+  bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                 Autonomous Task
-//
-// This task is used to control your robot during the autonomous phase of a VEX Competition.
-// You must modify the code to add your own robot specific commands here.
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-
-task autonomous()
-{
-  // .....................................................................................
-  // Insert user code here.
-  // .....................................................................................
-
+//--------------------Autonomous mode--------------------\\
+task autonomous() {
 	AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                 User Control Task
-//
-// This task is used to control your robot during the user control phase of a VEX Competition.
-// You must modify the code to add your own robot specific commands here.
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-
-task usercontrol()
-{
+//--------------------Manual Control Loop--------------------\\
+task usercontrol() {
 	//Main operator control loop
   while(true){
 	  int x = vexRT[joyDriveA];
