@@ -18,6 +18,24 @@
 
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
+//Helper function for setting all drive motors in one command
+void setDriveMotors(int fL, int fR, int bL, int bR) {
+   motor[mFrontLeft] = fL;
+   motor[mFrontRight] = fR;
+   motor[mBackLeft] = bL;
+   motor[mBackRight] = bR;
+}
+
+//Helper function for setting all shooter motors in one command, with correct polarity
+void setShooterMotors(int power) {
+   motor[mShooter2] = power;
+   motor[mShooter3] = -power;
+   motor[mShooter4] = -power;
+   motor[mShooter7] = -power;
+   motor[mShooter8] = power;
+   motor[mShooter9] = power;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 //                          Pre-Autonomous Functions
