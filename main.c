@@ -21,7 +21,7 @@
 #pragma userControlDuration(120)
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
-//--------------------Button Mapping--------------------\\
+//--------------------Button Mapping--------------------//
 //Drive axis
 #define joyDriveA Ch1 //First axis for the drive joysticks
 #define joyDriveB Ch4 //Second axis for the drive joysticks
@@ -34,15 +34,15 @@
 #define joyShooterFull Btn6U //Set the shooter speed to max (127)
 
 
-//--------------------Constants--------------------\\
+//--------------------Constants--------------------//
 #define targetShooterPos = 127; //Optimal speed for firing
 
 float shooterIncrement = 0.01; //How much to increment or decrement speed each tick
 
-//--------------------Variables--------------------\\
+//--------------------Variables--------------------//
 float shooterSpeed = 0; //stores the current set speed for the shooter motors
 
-//--------------------Helper Functions-------------\\
+//--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
    motor[mFrontLeft] = fL;
@@ -61,17 +61,17 @@ void setShooterMotors(int power) {
    motor[mShooter9] = power;
 }
 
-//--------------------Initalization Code--------------------\\
+//--------------------Initalization Code--------------------//
 void pre_auton() {
   bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
 }
 
-//--------------------Autonomous mode--------------------\\
+//--------------------Autonomous mode--------------------//
 task autonomous() {
 	AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
 }
 
-//--------------------Manual Control Loop--------------------\\
+//--------------------Manual Control Loop--------------------//
 task usercontrol() {
 	float lastValue = 0;
 	float currentValue = 0;
