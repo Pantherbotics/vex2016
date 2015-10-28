@@ -35,9 +35,9 @@
 
 
 //--------------------Constants--------------------//
-#define targetShooterPos = 127; //Optimal speed for firing
+int targetShooterSpd = 14; //Optimal speed for firing
 
-float shooterIncrement = 0.1; //How much to increment or decrement speed each tick
+float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 
 //--------------------Variables--------------------//
 float shooterSpeed = 0; //stores the current set speed for the shooter motors
@@ -81,7 +81,9 @@ task usercontrol() {
     wait1Msec(20);
     lastValue = currentValue;
     currentValue = SensorValue[testEncoder];
-    writeDebugStreamLine("speed: %-4i value: %-8i Motors: %i", (currentValue-lastValue), currentValue, shooterSpeed);
+    int speed = (currentValue-lastValue);
+    int error = targetShooterSpd-speed;
+    writeDebugStreamLine("error: %-4i speed: %-8i Motors: %i %i", error, speed, shooterSpeed, shooterSpeed+(error*2.0));
 
 	  int x = vexRT[joyDriveA];
 	  int y = vexRT[joyDriveB];
@@ -113,7 +115,7 @@ task usercontrol() {
 		  setShooterMotors(127);
 
     }else{
-		  setShooterMotors(shooterSpeed);
+		  setShooterMotors(shooterSpeed+(error*2.0));
     } //End shooter button if statements
   } //End main program loop
 }
