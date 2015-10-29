@@ -35,13 +35,15 @@
 
 
 //--------------------Constants--------------------//
-float targetShooterSpd = 14.3; //Optimal speed for firing
-
+float optimalShooterSpd = 14.3; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 
 //--------------------Variables--------------------//
-float shooterSpeed = 0; //stores the current set speed for the shooter motors
-float shooterAverage = 0;
+float shooterMotorRaw = 0; //stores the current set speed for the shooter motors
+int lastSpeedValue = 0;    //The previous speed of the shooter
+int currentSpeedValue = 0; //The current speed of the shooter
+float shooterAverage = 0;  //Average speed of the shooter
+float shooterTarget = 0;    //The target for the shooter PID loop
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -62,6 +64,27 @@ void setShooterMotors(int power) {
    motor[mShooter9] = power;
 }
 
+void calculateShooter(){
+	wait1Msec(20);
+  lastSpeedValue = currentSpeedValue;              //Get the prevoius speed of the shooter
+  currentSpeedValue = SensorValue[testEncoder];    //Get the current speed of the shooter
+  int speed = (currentSpeedValue-lastSpeedValue);  //Calculate the change in position between the last cycle
+  if (speed > 20) {speed=20;}                      //Clamp the speed to make sure it doesn't go over 20/s
+  else if (speed < -20) {speed=-20;}               // (sometimes it generates erronously high values)
+
+  shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
+  float error = optimalShooterSpd-speed;            //Calculate an error based on the target
+
+  shooterMotorRaw=shooterMotorRaw+(error*0.3);           //Add 30% of the error to the motor power output
+  if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
+  else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
+
+                                                   //Debug output!
+  writeDebugStreamLine("error: %-4i speed: %-4i Motors: %i", error, shooterAverage, shooterMotorRaw);
+
+}
+
+
 //--------------------Initalization Code--------------------//
 void pre_auton() {
   bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
@@ -74,25 +97,8 @@ task autonomous() {
 
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
-	float lastValue = 0;
-	float currentValue = 0;
 	//Main operator control loop
   while(true){
-  	//Test code for the encoders
-    wait1Msec(20);
-    lastValue = currentValue;
-    currentValue = SensorValue[testEncoder];
-    int speed = (currentValue-lastValue);
-    if (speed > 20) {speed=20;}
-    else if (speed < -20) {speed=-20;}
-    shooterAverage = (shooterAverage + speed) / 2.0;
-    float error = targetShooterSpd-speed;
-
-
-    writeDebugStreamLine("error: %-4i speed: %-4i Motors: %i", error, shooterAverage, shooterSpeed);
-    shooterSpeed=shooterSpeed+(error*0.3);
-    if (shooterSpeed > 127) {shooterSpeed=127;}
-    else if (shooterSpeed < -127) {shooterSpeed=-127;}
 
 	  int x = vexRT[joyDriveA];
 	  int y = vexRT[joyDriveB];
@@ -106,25 +112,26 @@ task usercontrol() {
 
 	  //bring the shooter to a full stop permanently
   	if (vexRT[joyShooterZero] == 1) {
-	  	shooterSpeed = 0;
+	  	shooterTarget = 0;
 	  	setShooterMotors(0);
 
-	  //Increment the motor speed by 10
+	  //Increment the target
   	}else if (vexRT[joyShooterIncU] == 1) {
-	    shooterSpeed += shooterIncrement;
-	    setShooterMotors(shooterSpeed);
+	    shooterTarget += shooterIncrement;
 
-	  //Decrement the motor speed by 10
+	  //Decrement the target
 	  }else if (vexRT[joyShooterIncD] == 1) {
-	    shooterSpeed -= shooterIncrement;
-	    setShooterMotors(shooterSpeed);
+	    shooterTarget -= shooterIncrement;
 
-	  //Set the shooter speed to the maximum temporarily
+	  //Set the shooter speed to the optimal speed
     }else if (vexRT[joyShooterFull] == 1) {
-		  setShooterMotors(127);
+		  shooterTarget = optimalShooterSpd;
 
-    }else{
-		  setShooterMotors(shooterSpeed);
     } //End shooter button if statements
+
+    calculateShooter();                //Calculate the shooter's speed and the motor speed
+    setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
+
   } //End main program loop
 }
