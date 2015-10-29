@@ -35,7 +35,7 @@
 
 
 //--------------------Constants--------------------//
-float optimalShooterSpd = 14.3; //Optimal speed for firing
+float optimalShooterSpd = 14.5; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 
 //--------------------Variables--------------------//
@@ -73,14 +73,14 @@ void calculateShooter(){
   else if (speed < -20) {speed=-20;}               // (sometimes it generates erronously high values)
 
   shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
-  float error = optimalShooterSpd-speed;            //Calculate an error based on the target
+  float error = shooterTarget-speed;            //Calculate an error based on the target
 
-  shooterMotorRaw=shooterMotorRaw+(error*0.3);           //Add 30% of the error to the motor power output
+  shooterMotorRaw=shooterMotorRaw+(error*0.2);           //Add 20% of the error to the motor power output
   if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
   else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
 
                                                    //Debug output!
-  writeDebugStreamLine("error: %-4i speed: %-4i Motors: %i", error, shooterAverage, shooterMotorRaw);
+  writeDebugStreamLine("target: %-4i speed: %-4i Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
 
 }
 
@@ -113,6 +113,7 @@ task usercontrol() {
 	  //bring the shooter to a full stop permanently
   	if (vexRT[joyShooterZero] == 1) {
 	  	shooterTarget = 0;
+	  	shooterMotorRaw = 0;
 	  	setShooterMotors(0);
 
 	  //Increment the target
