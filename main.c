@@ -1,4 +1,6 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
+#pragma config(Sensor, dgtl1,  rampSolenoidA,  sensorDigitalOut)
+#pragma config(Sensor, dgtl2,  rampSolenoidB,  sensorDigitalOut)
 #pragma config(Sensor, dgtl12, ShooterReadyLED, sensorLEDtoVCC)
 #pragma config(Sensor, I2C_1,  testEncoder,    sensorQuadEncoderOnI2CPort,    , AutoAssign)
 #pragma config(Motor,  port1,           mFrontLeft,    tmotorVex393_HBridge, openLoop, reversed)
@@ -34,6 +36,8 @@
 #define joyShooterIncD Btn5D //Decrement the shooter speed
 #define joyShooterFull Btn6U //Set the shooter speed to max (127)
 
+//Pneumatics Buttons
+#define joyPneuToggle  Btn8U //Activates the ramp solenoids
 
 //--------------------Constants--------------------//
 float optimalShooterSpd = 36.8; //Optimal speed for firing
@@ -137,6 +141,9 @@ task usercontrol() {
 
     calculateShooter();                //Calculate the shooter's speed and the motor speed
     setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
+    SensorValue[rampSolenoidA] = SensorValue[joyPneuToggle];
+    SensorValue[rampSolenoidB] = SensorValue[joyPneuToggle];
 
 
   } //End main program loop
