@@ -1,6 +1,8 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
 #pragma config(Sensor, dgtl1,  rampSolenoidA,  sensorDigitalOut)
 #pragma config(Sensor, dgtl2,  rampSolenoidB,  sensorDigitalOut)
+#pragma config(Sensor, dgtl3,  alignSolenoid,  sensorDigitalOut)
+#pragma config(Sensor, dgtl4,  shootSolenoid,  sensorDigitalOut)
 #pragma config(Sensor, dgtl12, ShooterReadyLED, sensorLEDtoVCC)
 #pragma config(Sensor, I2C_1,  testEncoder,    sensorQuadEncoderOnI2CPort,    , AutoAssign)
 #pragma config(Motor,  port1,           mFrontLeft,    tmotorVex393_HBridge, openLoop, reversed)
