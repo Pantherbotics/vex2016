@@ -38,7 +38,10 @@
 #define joyShooterFull Btn6U //Set the shooter speed to max (127)
 
 //Pneumatics Buttons
-#define joyPneuToggle  Btn8U //Activates the ramp solenoids
+#define joyRampActivate  Btn8U //Activates the ramp solenoids
+#define joyAlignActivate Btn8D //Toggles the alignment solenoids
+#define JoyShooterManual Btn9U //Manual trigger for the shooter solenoid
+#define joyShooterAuto   Btn9D //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
 float optimalShooterSpd = 36.8; //Optimal speed for firing
@@ -147,8 +150,8 @@ task usercontrol() {
     calculateShooter();                //Calculate the shooter's speed and the motor speed
     setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
-    SensorValue[rampSolenoidA] = SensorValue[joyPneuToggle]; //Set the state of the ramp
-    SensorValue[rampSolenoidB] = SensorValue[joyPneuToggle]; //Set the state of the ramp
+    SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
+    SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
 
 
   } //End main program loop
