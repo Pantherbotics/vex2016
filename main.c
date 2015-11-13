@@ -143,8 +143,8 @@ task usercontrol() {
     calculateShooter();                //Calculate the shooter's speed and the motor speed
     setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
-    SensorValue[rampSolenoidA] = SensorValue[joyPneuToggle];
-    SensorValue[rampSolenoidB] = SensorValue[joyPneuToggle];
+    SensorValue[rampSolenoidA] = SensorValue[joyPneuToggle]; //Set the state of the ramp
+    SensorValue[rampSolenoidB] = SensorValue[joyPneuToggle]; //Set the state of the ramp
 
 
   } //End main program loop
