@@ -43,7 +43,7 @@
 //--------------------Constants--------------------//
 float optimalShooterSpd = 36.8; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
-
+int shooterSmoothTrigger = 30; //how long the shooter must be stable for in order to trigger a shot
 //--------------------Variables--------------------//
 float shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastSpeedValue = 0;    //The previous speed of the shooter
@@ -51,6 +51,7 @@ int currentSpeedValue = 0; //The current speed of the shooter
 float shooterAverage = 0;  //Average speed of the shooter
 float shooterTarget = 0;    //The target for the shooter PID loop
 bool isShooterReady = false;
+int shooterSmooth = 0; //used to smooth out the readiness detection for the shooter
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -86,8 +87,11 @@ void calculateShooter(){
   if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
   else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
 
-  isShooterReady = (shooterAverage > shooterTarget-1.5 && shooterAverage < shooterTarget+1.5);
-  SensorValue[ShooterReadyLED] = isShooterReady;
+  bool ready = (shooterAverage > shooterTarget-1.5 && shooterAverage < shooterTarget+1.5);
+  if (ready) {shooterSmooth += 1;} //Smooth out the okay detection
+  else {shooterSmooth = 0;}
+  isShooterReady = (ready && shooterSmooth == shooterSmoothTrigger); 
+  //SensorValue[ShooterReadyLED] = isShooterReady;
 
   //Debug output!
   writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
