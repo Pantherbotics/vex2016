@@ -47,6 +47,8 @@
 float optimalShooterSpd = 36.8; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 int shooterSmoothTrigger = 30; //how long the shooter must be stable for in order to trigger a shot
+int rampSecondsRemaining = 20; //Time from end of match that ramp will be triggerable
+
 //--------------------Variables--------------------//
 float shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastSpeedValue = 0;    //The previous speed of the shooter
@@ -55,6 +57,8 @@ float shooterAverage = 0;  //Average speed of the shooter
 float shooterTarget = 0;    //The target for the shooter PID loop
 bool isShooterReady = false;
 int shooterSmooth = 0; //used to smooth out the readiness detection for the shooter
+bool alignState = false;
+bool alignReady = true;
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -98,9 +102,16 @@ void calculateShooter(){
 
   //Debug output!
   writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
-
 }
 
+//Takes manual joystick inputs to control solenoids
+void solenoidsManual(){
+ SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
+ SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
+ if (SensorValue[joyAlignActivate]) {alignState = !alignState; alignReady = false;}
+ else () {alignReady = true;} 
+ SensorValue[alignSolenoid] = alignState;
+ }
 
 //--------------------Initalization Code--------------------//
 void pre_auton() {
@@ -145,14 +156,12 @@ task usercontrol() {
     }else if (vexRT[joyShooterFull] == 1) {
 		  shooterTarget = optimalShooterSpd;
 
-    } //End shooter button if statements
+    } //shooter button if statements
 
     calculateShooter();                //Calculate the shooter's speed and the motor speed
     setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+    
+    solenoidsManual(); //Get button inputs for solenoid control
 
-    SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
-    SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
-
-
-  } //End main program loop
+  } //Main Loop
 }
