@@ -45,13 +45,13 @@
 //Pneumatics Buttons
 #define joyRampActivate  Btn8U //Activates the ramp solenoids
 #define joyAlignActivate Btn8D //Toggles the alignment solenoids
-#define JoyShooterManual Btn9U //Manual trigger for the shooter solenoid
-#define joyShooterAuto   Btn9D //Toggles automatic triggering of the shooter solenoid
+#define JoyShooterManual Btn7U //Manual trigger for the shooter solenoid
+#define joyShooterAuto   Btn7D //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
 float optimalShooterSpd = 36.8; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
-int shooterSmoothTrigger = 30; //how long the shooter must be stable for in order to trigger a shot
+int shooterSmoothTrigger = 10; //how long the shooter must be stable for in order to trigger a shot
 int rampSecondsRemaining = 20; //Time from end of match that ramp will be triggerable
 
 //--------------------Variables--------------------//
@@ -99,11 +99,11 @@ void calculateShooter(){
 	if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
 
-	bool ready = (shooterAverage > shooterTarget-1.5 && shooterAverage < shooterTarget+1.5);
+	bool ready = (shooterAverage > shooterTarget-2 && shooterAverage < shooterTarget+2);
 	if (ready) {shooterSmooth += 1;} //Smooth out the okay detection
-	else {shooterSmooth = 0;}
-	isShooterReady = (ready && shooterSmooth == shooterSmoothTrigger);
-	//SensorValue[ShooterReadyLED] = isShooterReady;
+	else {shooterSmooth *= 0.5 ;}
+	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
+	SensorValue[ShooterReadyLED] = isShooterReady;
 
 	//Debug output!
 	writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
@@ -112,9 +112,12 @@ void calculateShooter(){
 
 //Takes manual joystick inputs to control solenoids
 void solenoidsManual(){
-	SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
-	SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
-	if (SensorValue[joyAlignActivate]) {alignState = !alignState; alignReady = false;}
+	SensorValue[rampSolenoidA] = !vexRT[joyRampActivate]; //Set the state of the ramp
+	SensorValue[rampSolenoidB] = !vexRT[joyRampActivate]; //Set the state of the ramp
+	if (vexRT[joyAlignActivate]) {
+		if(alignReady)
+			alignState = !alignState;
+		alignReady = false;}
 	else {alignReady = true;}
 	SensorValue[alignSolenoid] = alignState;
 }
@@ -126,9 +129,9 @@ void pre_auton() {
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-motor[mShooter9] = 127;
-wait1Msec(2000);
-motor[mShooter9] = 0;
+	motor[mShooter9] = 127;
+	wait1Msec(2000);
+	motor[mShooter9] = 0;
 }
 
 //--------------------Manual Control Loop--------------------//
