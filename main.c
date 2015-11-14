@@ -4,14 +4,19 @@
 #pragma config(Sensor, dgtl3,  alignSolenoid,  sensorDigitalOut)
 #pragma config(Sensor, dgtl4,  shootSolenoid,  sensorDigitalOut)
 #pragma config(Sensor, dgtl12, ShooterReadyLED, sensorLEDtoVCC)
-#pragma config(Sensor, I2C_1,  testEncoder,    sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_1,  encLeftFront10, sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_2,  encShooterLeft7B, sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_3,  encLeftBack6,   sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_4,  endBackRight5,  sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_5,  encShooterRight2, sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_6,  encRightFront1, sensorQuadEncoderOnI2CPort,    , AutoAssign)
 #pragma config(Motor,  port1,           mFrontLeft,    tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           mShooter2,     tmotorVex393HighSpeed_MC29, openLoop)
-#pragma config(Motor,  port3,           mShooter3,     tmotorVex393HighSpeed_MC29, openLoop)
-#pragma config(Motor,  port4,           mShooter4,     tmotorVex393HighSpeed_MC29, openLoop)
+#pragma config(Motor,  port3,           mShooter3,     tmotorVex393HighSpeed_MC29, openLoop, reversed)
+#pragma config(Motor,  port4,           mShooter4,     tmotorVex393HighSpeed_MC29, openLoop, reversed)
 #pragma config(Motor,  port5,           mBackLeft,     tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port6,           mFrontRight,   tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port7,           mShooter7,     tmotorVex393HighSpeed_MC29, openLoop)
+#pragma config(Motor,  port7,           mShooter7,     tmotorVex393HighSpeed_MC29, openLoop, reversed)
 #pragma config(Motor,  port8,           mShooter8,     tmotorVex393HighSpeed_MC29, openLoop)
 #pragma config(Motor,  port9,           mShooter9,     tmotorVex393HighSpeed_MC29, openLoop)
 #pragma config(Motor,  port10,          mBackRight,    tmotorVex393_HBridge, openLoop)
@@ -63,105 +68,108 @@ bool alignReady = true;
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
-   motor[mFrontLeft] = fL;
-   motor[mFrontRight] = fR;
-   motor[mBackLeft] = bL;
-   motor[mBackRight] = bR;
+	motor[mFrontLeft] = fL;
+	motor[mFrontRight] = fR;
+	motor[mBackLeft] = bL;
+	motor[mBackRight] = bR;
 }
 
 //Helper function for setting all shooter motors in one command, with correct polarity
 void setShooterMotors(int power) {
-   motor[mShooter2] = power;
-   motor[mShooter3] = -power;
-   motor[mShooter4] = -power;
-   motor[mShooter7] = -power;
-   motor[mShooter8] = power;
-   motor[mShooter9] = power;
+	motor[mShooter2] = power;
+	motor[mShooter3] = power;
+	motor[mShooter4] = power;
+	motor[mShooter7] = power;
+	motor[mShooter8] = power;
+	motor[mShooter9] = power;
 }
 
 void calculateShooter(){
 	wait1Msec(50);
-  lastSpeedValue = currentSpeedValue;              //Get the prevoius speed of the shooter
-  currentSpeedValue = SensorValue[testEncoder];    //Get the current speed of the shooter
-  int speed = (currentSpeedValue-lastSpeedValue);  //Calculate the change in position between the last cycle
-  if (speed > 50) {speed=50;}                      //Clamp the speed to make sure it doesn't go over 20/s
-  else if (speed < -50) {speed=-50;}               // (sometimes it generates erronously high values)
+	lastSpeedValue = currentSpeedValue;              //Get the prevoius speed of the shooter
+	currentSpeedValue = SensorValue[encShooterRight2];    //Get the current speed of the shooter
+	int speed = (currentSpeedValue-lastSpeedValue);  //Calculate the change in position between the last cycle
+	if (speed > 50) {speed=50;}                      //Clamp the speed to make sure it doesn't go over 20/s
+	else if (speed < -50) {speed=-50;}               // (sometimes it generates erronously high values)
 
-  shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
-  float error = shooterTarget-speed;            //Calculate an error based on the target
+	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
+	float error = shooterTarget-speed;            //Calculate an error based on the target
 
-  shooterMotorRaw=shooterMotorRaw+(error*0.05);           //Add 20% of the error to the motor power output
-  if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
-  else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
+	shooterMotorRaw=shooterMotorRaw+(error*0.05);           //Add 20% of the error to the motor power output
+	if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
+	else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
 
-  bool ready = (shooterAverage > shooterTarget-1.5 && shooterAverage < shooterTarget+1.5);
-  if (ready) {shooterSmooth += 1;} //Smooth out the okay detection
-  else {shooterSmooth = 0;}
-  isShooterReady = (ready && shooterSmooth == shooterSmoothTrigger); 
-  //SensorValue[ShooterReadyLED] = isShooterReady;
+	bool ready = (shooterAverage > shooterTarget-1.5 && shooterAverage < shooterTarget+1.5);
+	if (ready) {shooterSmooth += 1;} //Smooth out the okay detection
+	else {shooterSmooth = 0;}
+	isShooterReady = (ready && shooterSmooth == shooterSmoothTrigger);
+	//SensorValue[ShooterReadyLED] = isShooterReady;
 
-  //Debug output!
-  writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
+	//Debug output!
+	writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
+	writeDebugStreamLine("%i",nTimeXX);
 }
 
 //Takes manual joystick inputs to control solenoids
 void solenoidsManual(){
- SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
- SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
- if (SensorValue[joyAlignActivate]) {alignState = !alignState; alignReady = false;}
- else () {alignReady = true;} 
- SensorValue[alignSolenoid] = alignState;
- }
+	SensorValue[rampSolenoidA] = SensorValue[joyRampActivate]; //Set the state of the ramp
+	SensorValue[rampSolenoidB] = SensorValue[joyRampActivate]; //Set the state of the ramp
+	if (SensorValue[joyAlignActivate]) {alignState = !alignState; alignReady = false;}
+	else {alignReady = true;}
+	SensorValue[alignSolenoid] = alignState;
+}
 
 //--------------------Initalization Code--------------------//
 void pre_auton() {
-  bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
+	bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
 }
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	AutonomousCodePlaceholderForTesting();  // Remove this function call once you have "real" code.
+motor[mShooter9] = 127;
+wait1Msec(2000);
+motor[mShooter9] = 0;
 }
 
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
 	//Main operator control loop
-  while(true){
+	while(true){
 
-	  int x = vexRT[joyDriveA];
-	  int y = vexRT[joyDriveB];
-  	int z = vexRT[joyDriveC];
+		int x = vexRT[joyDriveA];
+		int y = vexRT[joyDriveB];
+		int z = vexRT[joyDriveC];
 
-  	//Basic configuration for 4 meccanum wheel drive
-  	setDriveMotors(x + z + y,
-	                 x - z - y,
-	                 x + z - y,
-	                 x - z + y);
+		//Basic configuration for 4 meccanum wheel drive
+		setDriveMotors(x + z + y,
+		x - z - y,
+		x + z - y,
+		x - z + y);
 
-	  //bring the shooter to a full stop permanently
-  	if (vexRT[joyShooterZero] == 1) {
-	  	shooterTarget = 0;
-	  	shooterMotorRaw = 0;
-	  	setShooterMotors(0);
+		//bring the shooter to a full stop permanently
+		if (vexRT[joyShooterZero] == 1) {
+			shooterTarget = 0;
+			shooterMotorRaw = 0;
+			setShooterMotors(0);
 
-	  //Increment the target
-  	}else if (vexRT[joyShooterIncU] == 1) {
-	    shooterTarget += shooterIncrement;
+			//Increment the target
+			}else if (vexRT[joyShooterIncU] == 1) {
+			shooterTarget += shooterIncrement;
 
-	  //Decrement the target
-	  }else if (vexRT[joyShooterIncD] == 1) {
-	    shooterTarget -= shooterIncrement;
+			//Decrement the target
+			}else if (vexRT[joyShooterIncD] == 1) {
+			shooterTarget -= shooterIncrement;
 
-	  //Set the shooter speed to the optimal speed
-    }else if (vexRT[joyShooterFull] == 1) {
-		  shooterTarget = optimalShooterSpd;
+			//Set the shooter speed to the optimal speed
+			}else if (vexRT[joyShooterFull] == 1) {
+			shooterTarget = optimalShooterSpd;
 
-    } //shooter button if statements
+		} //shooter button if statements
 
-    calculateShooter();                //Calculate the shooter's speed and the motor speed
-    setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
-    
-    solenoidsManual(); //Get button inputs for solenoid control
+		calculateShooter();                //Calculate the shooter's speed and the motor speed
+		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
-  } //Main Loop
+		solenoidsManual(); //Get button innputs for solenoid control
+
+	} //Main Loop
 }
