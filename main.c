@@ -26,7 +26,7 @@
 
 //Competition Control and Duration Settings
 #pragma competitionControl(Competition)
-#pragma autonomousDuration(20)
+#pragma autonomousDuration(15)
 #pragma userControlDuration(120)
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
@@ -51,7 +51,7 @@
 //--------------------Constants--------------------//
 float optimalShooterSpd = 36.8; //Optimal speed for firing
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
-int shooterSmoothTrigger = 10; //how long the shooter must be stable for in order to trigger a shot
+int shooterSmoothTrigger = 5; //how long the shooter must be stable for in order to trigger a shot
 int rampSecondsRemaining = 20; //Time from end of match that ramp will be triggerable
 
 //--------------------Variables--------------------//
@@ -99,44 +99,70 @@ void calculateShooter(){
 	if (shooterMotorRaw > 127) {shooterMotorRaw=127;}      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) {shooterMotorRaw=-127;}
 
-	bool ready = (shooterAverage > shooterTarget-2 && shooterAverage < shooterTarget+2);
+	bool ready = (shooterAverage > shooterTarget-2.5&& shooterAverage < shooterTarget+2.5);
 	if (ready) {shooterSmooth += 1;} //Smooth out the okay detection
 	else {shooterSmooth *= 0.5 ;}
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
 	SensorValue[ShooterReadyLED] = isShooterReady;
 
 	//Debug output!
-	writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
-	writeDebugStreamLine("%i",nTimeXX);
+	//writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
+	//writeDebugStreamLine("%i",nTimeXX);
 }
 
 //Takes manual joystick inputs to control solenoids
 void solenoidsManual(){
-	SensorValue[rampSolenoidA] = !vexRT[joyRampActivate]; //Set the state of the ramp
-	SensorValue[rampSolenoidB] = !vexRT[joyRampActivate]; //Set the state of the ramp
+	SensorValue[rampSolenoidA] = vexRT[joyRampActivate]; //Set the state of the ramp
+	SensorValue[rampSolenoidB] = vexRT[joyRampActivate]; //Set the state of the ramp
 	if (vexRT[joyAlignActivate]) {
 		if(alignReady)
 			alignState = !alignState;
 		alignReady = false;}
 	else {alignReady = true;}
 	SensorValue[alignSolenoid] = alignState;
+	SensorValue[shootSolenoid] = vexRT[JoyShooterManual];
 }
 
 //--------------------Initalization Code--------------------//
 void pre_auton() {
 	bStopTasksBetweenModes = true; //Set false for user tasks to run between mode switches
+	SensorValue[shootSolenoid] = 1
+	SensorValue[rampSolenoidA] = 0;
+	SensorValue[rampSolenoidB] = 0;
+	SensorValue[alignSolenoid] = 0;
+
 }
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	motor[mShooter9] = 127;
-	wait1Msec(2000);
-	motor[mShooter9] = 0;
+	shooterTarget = optimalShooterSpd;
+	SensorValue[alignSolenoid] = 1;
+	SensorValue[shootSolenoid] = 1;
+	int state = 0;
+	ClearTimer(T2);
+	while (bIfiAutonomousMode && !bIfiRobotDisabled) {
+		calculateShooter();                //Calculate the shooter's speed and the motor speed
+
+
+		if (isShooterReady && state==0 && time1[T2] > 500) {state=1; SensorValue[shootSolenoid]=0;ClearTimer(T1);}
+		else if (state==1 && time1[T1] > 500) {state=2; ClearTimer(T2);}
+		else if (state==2 && !isShooterReady) {state=0;SensorValue[shootSolenoid]=1;}
+		writeDebugStreamLine("sol: %i, state: %i, t1: %i, t2: %i",SensorValue[shootSolenoid], state,time1[T1],time1[T2]);
+
+		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
+	}
+	SensorValue[alignSolenoid] = 0;
+	shooterTarget = 0;
+	setShooterMotors(0);
 }
 
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
 	//Main operator control loop
+  SensorValue[shootSolenoid] = 0; //Set the shooter to open
+  shooterTarget = 0;
+	setShooterMotors(0);
 	while(true){
 
 		int x = vexRT[joyDriveA];
