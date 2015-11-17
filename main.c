@@ -89,7 +89,7 @@ int nSysTime;
 #pragma userControlDuration(120)
 
 #define USE_BUTTON_PLACEHOLDER
-#include "../CustomLCD.c"
+//#include "../CustomLCD.c"
 
 #ifdef _MSC_VER
 #include "C:\Program Files (x86)\Robomatter Inc\ROBOTC Development Environment 4.X\Includes\Vex_Competition_Includes.c"   //Main competition background code...do not modify!
@@ -226,7 +226,7 @@ void calculateShooter2() {
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
 
-	bool ready = (shooterAverage > shooterTarget - 2.5&& shooterAverage < shooterTarget + 2.5);
+	bool ready = (shooterAverage > shooterTarget - 1.5&& shooterAverage < shooterTarget + 1.5);
 	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
