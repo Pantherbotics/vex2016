@@ -282,43 +282,11 @@ void pre_auton() {
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	//int fL, int fR, int bL, int bR
-	//setDriveMotors(127,127,127,127);
 	shooterTarget = optimalShooterSpd;
-	//SensorValue[alignSolenoid] = 1;
 	SensorValue[shootSolenoid] = 1;
-	int state = 0;
-	ClearTimer(T2);
 	if (!SensorValue[autonJumper]) {
 		while (true) {
 			calculateShooter();                //Calculate the shooter's speed and the motor speed
-
-			/*
-			if (isShooterReady && state == 0 && time1[T2] > 500) {
-				state = 1;
-				SensorValue[shootSolenoid] = 0;
-				ClearTimer(T1);
-			}
-			else if (state == 1 && time1[T1] > 650) {
-				state = 2;
-				ClearTimer(T2);
-			}
-			else if (state == 2 && !isShooterReady) {
-				state = 0;
-				SensorValue[shootSolenoid] = 1;
-			}
-			*/
-			//-----
-			if (isShooterReady) {
-				SensorValue[shootSolenoid] = 0;
-				ClearTimer(T1);
-			}
-			else if (!isShooterReady && time1[T1] > 500) {
-				SensorValue[shootSolenoid] = 1;
-			}
-
-			//-----
-			//writeDebugStreamLine("sol: %i, state: %i, t1: %i, t2: %i", SensorValue[shootSolenoid], state, time1[T1], time1[T2]);
 
 			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
