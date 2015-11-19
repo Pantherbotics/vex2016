@@ -1,4 +1,5 @@
 #pragma config(I2C_Usage, I2C1, i2cSensors)
+#pragma config(Sensor, in8,    ballDetect,     sensorLineFollower)
 #pragma config(Sensor, dgtl1,  rampSolenoidA,  sensorDigitalOut)
 #pragma config(Sensor, dgtl2,  rampSolenoidB,  sensorDigitalOut)
 #pragma config(Sensor, dgtl3,  alignSolenoid,  sensorDigitalOut)
@@ -120,10 +121,11 @@ int nSysTime;
 #define joyShooterAuto   Btn8L //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
-float optimalShooterSpd = 36.8; //Optimal speed for firing
+float optimalShooterSpd = 36.8; //Optimal speed for firing 36.8
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
-int shooterSmoothTrigger = 5; //how long the shooter must be stable for in order to trigger a shot
+int shooterSmoothTrigger = 6; //how long the shooter must be stable for in order to trigger a shot
 int rampSecondsRemaining = 20; //Time from end of match that ramp will be triggerable
+int ballDetectThreshold = 2525;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;
@@ -175,12 +177,12 @@ void calculateShooter() {
 	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
 	float error = shooterTarget - speed;            //Calculate an error based on the target
 
-	shooterMotorRaw = 58;//shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
-	writeDebugStreamLine("%-4f, %-4f, %-4f", shooterMotorRaw, error, lastError - error);
+	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
+	writeDebugStreamLine("%-4f, %-4f, %-4f, %-4f", shooterMotorRaw, speed,error, lastError - error);
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
 
-	bool ready = (shooterAverage > shooterTarget - 2.5&& shooterAverage < shooterTarget + 2.5);
+	bool ready = (shooterAverage > shooterTarget - 2.0&& shooterAverage < shooterTarget + 2.0);
 	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
@@ -226,7 +228,7 @@ void calculateShooter2() {
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
 
-	bool ready = (shooterAverage > shooterTarget - 1.5&& shooterAverage < shooterTarget + 1.5);
+	bool ready = (shooterAverage > shooterTarget - 2.5&& shooterAverage < shooterTarget + 2.5);
 	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
@@ -287,6 +289,13 @@ task autonomous() {
 	if (!SensorValue[autonJumper]) {
 		while (true) {
 			calculateShooter();                //Calculate the shooter's speed and the motor speed
+
+			if (Sensorvalue[ballDetect] < ballDetectThreshold | !isShooterReady) {
+        SensorValue[shootSolenoid] = 1;
+      }
+			if (isShooterReady){
+				SensorValue[shootSolenoid] = 0;
+			}
 
 			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
