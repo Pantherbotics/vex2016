@@ -168,24 +168,28 @@ void calculateShooter() {
 	currentSpeedValue = SensorValue[encShooterRight2];    //Get the current speed of the shooter
 	int currSysTime;
 
-	int speed = (lastSpeed + ((currentSpeedValue - lastSpeedValue) * 50 / ((currSysTime = nSysTime) - lastSysTime))) / 2;  //Calculate the change in position between the last cycle
+	//Calculate the motor speed based on the system timer and the motor distance. Average the results
+	int speed = (lastSpeed + ((currentSpeedValue - lastSpeedValue) * 50 / ((currSysTime = nSysTime) - lastSysTime))) / 2;
 	lastSpeed = speed;
 	lastSysTime = currSysTime;
-	if (speed > 50) { speed = 50; }                      //Clamp the speed to make sure it doesn't go over 20/s
-	else if (speed < -50) { speed = -50; }               // (sometimes it generates erronously high values)
+	if (speed > 50) { speed = 50; }           //Clamp the speed to make sure it doesn't go over 50/s
+	else if (speed < -50) { speed = -50; }    // (prevents it from generating erronously high values)
 
-	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
+	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average (AGAIN!! TODO: Remove this)
 	float error = shooterTarget - speed;            //Calculate an error based on the target
 
-	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
-	writeDebugStreamLine("%-4f, %-4f, %-4f, %-4f", shooterMotorRaw, speed,error, lastError - error);
+	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5); //Calculate motor speed from error and accululated error
+	writeDebugStreamLine("%-4f, %-4f, %-4f, %-4f", shooterMotorRaw, speed,error, lastError - error); //Debug ALL THE THINGS
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
 
+	//Determine if the motors are within a margin of the target speed
 	bool ready = (shooterAverage > shooterTarget - 2.0&& shooterAverage < shooterTarget + 2.0);
 	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
-	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
+	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger); //Set global variable based on smoothing value
+
+	//Set the insicators status (LED, LCD backlight, and LCD text)
 	SensorValue[ShooterReadyLED] = isShooterReady;
 	bLCDBacklight = isShooterReady;
 	if (isShooterReady) {
