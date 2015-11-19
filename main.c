@@ -216,11 +216,11 @@ void calculateShooter2() {
 	int speed = (lastSpeed + ((currentSpeedValue - lastSpeedValue) * 50 / ((currSysTime = nSysTime) - lastSysTime))) / 2;  //Calculate the change in position between the last cycle
 	lastSpeed = speed;
 	lastSysTime = currSysTime;
-	if (speed > 50) { speed = 50; }                      //Clamp the speed to make sure it doesn't go over 20/s
-	else if (speed < -50) { speed = -50; }               // (sometimes it generates erronously high values)
+	if (speed > 50) { speed = 50; }                  //Clamp the speed to make sure it doesn't go over 20/s
+	else if (speed < -50) { speed = -50; }           // (sometimes it generates erronously high values)
 
 	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
-	float error = shooterTarget - speed;            //Calculate an error based on the target
+	float error = shooterTarget - speed;             //Calculate an error based on the target
 
 	if (error > 8) {
 		shooterMotorRaw = 127;
