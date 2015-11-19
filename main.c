@@ -124,7 +124,6 @@ int nSysTime;
 float optimalShooterSpd = 36.8; //Optimal speed for firing 36.8
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 int shooterSmoothTrigger = 6; //how long the shooter must be stable for in order to trigger a shot
-int rampSecondsRemaining = 20; //Time from end of match that ramp will be triggerable
 int ballDetectThreshold = 2525;
 
 //--------------------Variables--------------------//
@@ -163,7 +162,7 @@ void setShooterMotors(int power) {
 
 void calculateShooter() {
 	wait1Msec(50);
-	lastSpeedValue = currentSpeedValue; //Get the prevoius speed of the shooter
+	lastSpeedValue = currentSpeedValue;                   //Get the prevoius speed of the shooter
 
 	currentSpeedValue = SensorValue[encShooterRight2];    //Get the current speed of the shooter
 	int currSysTime;
@@ -176,16 +175,17 @@ void calculateShooter() {
 	else if (speed < -50) { speed = -50; }    // (prevents it from generating erronously high values)
 
 	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average (AGAIN!! TODO: Remove this)
-	float error = shooterTarget - speed;            //Calculate an error based on the target
+	float error = shooterTarget - speed;              //Calculate an error based on the target
 
-	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5); //Calculate motor speed from error and accululated error
+	//Calculate motor speed from error and accululated error
+	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
 	writeDebugStreamLine("%-4f, %-4f, %-4f, %-4f", shooterMotorRaw, speed,error, lastError - error); //Debug ALL THE THINGS
-	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
+	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                                            //Clamp the motor output to prevent error
+	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }                                     //accumulation from going too crazy
 
 	//Determine if the motors are within a margin of the target speed
 	bool ready = (shooterAverage > shooterTarget - 2.0&& shooterAverage < shooterTarget + 2.0);
-	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
+	if (ready) { shooterSmooth += 1; }                                 //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger); //Set global variable based on smoothing value
 
@@ -294,7 +294,7 @@ task autonomous() {
 		while (true) {
 			calculateShooter();                //Calculate the shooter's speed and the motor speed
 
-			if (Sensorvalue[ballDetect] < ballDetectThreshold | !isShooterReady) {
+			if (SensorValue[ballDetect] < ballDetectThreshold | !isShooterReady) {
         SensorValue[shootSolenoid] = 1;
       }
 			if (isShooterReady){
@@ -313,7 +313,7 @@ task autonomous() {
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
 	//Main operator control loop
-	ClearTimer(T4);
+	clearTimer(T4);
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	shooterTarget = 0;
 	alignState = false;
