@@ -121,20 +121,23 @@ int nSysTime;
 #define joyShooterAuto   Btn8L //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
-float optimalShooterSpd = 36.8; //Optimal speed for firing 36.8
+float optimalShooterSpd = 38.8; //Optimal speed for firing 36.8
 float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
 int shooterSmoothTrigger = 6; //how long the shooter must be stable for in order to trigger a shot
 int ballDetectThreshold = 2525;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;
-int lastSpeed = 0;
+int lastSpeedA = 0;
+int lastSpeedB = 0;
 int power = 0;
 float shooterMotorRaw = 0; //stores the current set speed for the shooter motors
-int lastSpeedValue = 0;    //The previous speed of the shooter
+int lastEncA = 0;    //The previous speed of the shooter
+int lastEncB = 0;
 int lastError = 0;
-int currentSpeedValue = 0; //The current speed of the shooter
-float shooterAverage = 0;  //Average speed of the shooter
+int currentDistA = 0; //The current speed of the shooter
+int currentDistB = 0; //The current speed of the shooter
+int speedAverages = 0;
 float shooterTarget = 0;    //The target for the shooter PID loop
 bool isShooterReady = false;
 int shooterSmooth = 0; //used to smooth out the readiness detection for the shooter
@@ -162,29 +165,42 @@ void setShooterMotors(int power) {
 
 void calculateShooter() {
 	wait1Msec(50);
-	lastSpeedValue = currentSpeedValue;                   //Get the prevoius speed of the shooter
+	lastEncA = currentDistA;                   //Get the prevoius speed of the shooter
+	lastEncB = currentDistB;                   //Get the prevoius speed of the shooter
 
-	currentSpeedValue = SensorValue[encShooterRight2];    //Get the current speed of the shooter
+	currentDistA = -SensorValue[encShooterLeft7B];    //Get the current speed of the shooter SensorValue[encShooterRight2]
+	currentDistB = SensorValue[encShooterRight2];    //Get the current speed of the shooter SensorValue[encShooterRight2]
 	int currSysTime;
 
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results
-	int speed = (lastSpeed + ((currentSpeedValue - lastSpeedValue) * 50 / ((currSysTime = nSysTime) - lastSysTime))) / 2;
-	lastSpeed = speed;
-	lastSysTime = currSysTime;
-	if (speed > 50) { speed = 50; }           //Clamp the speed to make sure it doesn't go over 50/s
-	else if (speed < -50) { speed = -50; }    // (prevents it from generating erronously high values)
+	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
+	float speedB = ((currentDistB - lastEncB) * 50.0 / ((currSysTime) - lastSysTime));
+	speedAverages = (lastSpeedA+lastSpeedB+speed+speedB)/4
+	//speedAverages = (speed+speedB)/2
+	lastSpeedA = speed;
+	lastSpeedB = speedB;
 
-	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average (AGAIN!! TODO: Remove this)
-	float error = shooterTarget - speed;              //Calculate an error based on the target
+	lastSysTime = currSysTime;
+	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
+	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
+
+	float error = shooterTarget - speedAverages;              //Calculate an error based on the target
 
 	//Calculate motor speed from error and accululated error
-	shooterMotorRaw = shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
-	writeDebugStreamLine("%-4f, %-4f, %-4f, %-4f", shooterMotorRaw, speed,error, lastError - error); //Debug ALL THE THINGS
+	if (error > 8) {
+		shooterMotorRaw = 127;
+	}
+	else {
+		shooterMotorRaw = shooterMotorRaw + (error*0.4) - ((lastError - error) * 0.0);
+	}
+
+
+	writeDebugStreamLine("raw:%-4f, speed:%-4f error:%-4f, diff:%-4f ", shooterMotorRaw, speedAverages,error, lastError - error); //Debug ALL THE THINGS
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                                            //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }                                     //accumulation from going too crazy
 
 	//Determine if the motors are within a margin of the target speed
-	bool ready = (shooterAverage > shooterTarget - 2.0&& shooterAverage < shooterTarget + 2.0);
+	bool ready = (speed > shooterTarget - 1.5&& speed < shooterTarget + 1.5);
 	if (ready) { shooterSmooth += 1; }                                 //Smooth out the okay detection
 	else { shooterSmooth *= 0.5; }
 	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger); //Set global variable based on smoothing value
@@ -194,62 +210,13 @@ void calculateShooter() {
 	bLCDBacklight = isShooterReady;
 	if (isShooterReady) {
 		clearLCDLine(1);
+
 		displayLCDCenteredString(1, "READY!!!");
 	}
 	else {
 		clearLCDLine(1);
 		displayLCDCenteredString(1, "wait...");
 	}
-	//Debug output!
-	//writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
-	//writeDebugStreamLine("%i",nTimeXX);
-	lastError = error;
-}
-
-void calculateShooter2() {
-	wait1Msec(50);
-	lastSpeedValue = currentSpeedValue; //Get the prevoius speed of the shooter
-
-	currentSpeedValue = SensorValue[encShooterRight2];    //Get the current speed of the shooter
-	int currSysTime;
-
-	int speed = (lastSpeed + ((currentSpeedValue - lastSpeedValue) * 50 / ((currSysTime = nSysTime) - lastSysTime))) / 2;  //Calculate the change in position between the last cycle
-	lastSpeed = speed;
-	lastSysTime = currSysTime;
-	if (speed > 50) { speed = 50; }                  //Clamp the speed to make sure it doesn't go over 20/s
-	else if (speed < -50) { speed = -50; }           // (sometimes it generates erronously high values)
-
-	shooterAverage = (shooterAverage + speed) / 2.0; //Get an average
-	float error = shooterTarget - speed;             //Calculate an error based on the target
-
-	if (error > 8) {
-		shooterMotorRaw = 127;
-	}
-	else {
-		shooterMotorRaw = power;//shooterMotorRaw + (error*0.05) - ((lastError - error) * 0.5);
-	}
-
-	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }      //Clamp the motor output so it doesn't go above 127 or below -127
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
-
-	bool ready = (shooterAverage > shooterTarget - 2.5&& shooterAverage < shooterTarget + 2.5);
-	if (ready) { shooterSmooth += 1; } //Smooth out the okay detection
-	else { shooterSmooth *= 0.5; }
-	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger);
-	SensorValue[ShooterReadyLED] = isShooterReady;
-	bLCDBacklight = isShooterReady;
-	if (isShooterReady) {
-		clearLCDLine(1);
-		displayLCDCenteredString(1, "READY!!!");
-	}
-	else {
-		clearLCDLine(1);
-		displayLCDCenteredString(1, "wait...");
-	}
-	clearLCDLine(0);
-	string str;
-	stringFormat(str, "%i", power);
-	displayLCDCenteredString(0, str);
 	//Debug output!
 	//writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
 	//writeDebugStreamLine("%i",nTimeXX);
