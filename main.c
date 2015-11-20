@@ -181,23 +181,25 @@ void calculateShooter() {
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
 	clearLCDLine(1);
+  string str;
 
 	if (speedAverages < 35 && !shooterState) {
 		shooterMotorRaw = 127;
 		shooterState = false;      //----------------
-		displayLCDCenteredString(1, "A - Speeding up ");
+		str = "A - Speeding up ";
 
-	}else if (speedAverages < 25 && shooterState) {
+	}else if (speedAverages < 20 && shooterState) {
 	  shooterMotorRaw = 127;
 		shooterState = false;      //----------------
-		displayLCDCenteredString(1, "A - Speeding up ");
+		str = "A - Speeding up ";
 
 	}else {
 	  shooterMotorRaw = manualSetSpeed;
 	  shooterState = true;       //----------------
-		displayLCDCenteredString(1, "M - Set To %-4i ",manualSetSpeed);
+	  stringFormat(str, "M - p:%-3i s:%-2i",manualSetSpeed,speedAverages);
   }
 
+  displayLCDCenteredString(1, str);
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                                            //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }                                     //accumulation from going too crazy
 
@@ -249,6 +251,7 @@ task usercontrol() {
 	//Main operator control loop
 	clearTimer(T4);
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
+	manualSetSpeed = defaultManualSpeed;
 	alignState = false;
 	setShooterMotors(0);
 	while (true) {
@@ -267,23 +270,25 @@ task usercontrol() {
 		if (vexRT[joyShooterZero] == 1) {
 			shooterMotorRaw = 0;
 			setShooterMotors(0);
-			power = 0;
+			manualSetSpeed = 0;
 
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
-			power++;
+			manualSetSpeed++;
 
 			//Decrement the target
 		}
 		else if (vexRT[joyShooterIncD] == 1) {
-			power--;
+			manualSetSpeed--;
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
-			power = 58;
+			manualSetSpeed = 58;
 		} //shooter button if statements
 
+
+		calculateShooter();
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		solenoidsManual(); //Get button innputs for solenoid control
