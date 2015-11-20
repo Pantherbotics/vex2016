@@ -121,28 +121,24 @@ int nSysTime;
 #define joyShooterAuto   Btn8L //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
-float optimalShooterSpd = 38.8; //Optimal speed for firing 36.8
-float shooterIncrement = 0.2; //How much to increment or decrement speed each tick
-int shooterSmoothTrigger = 6; //how long the shooter must be stable for in order to trigger a shot
 int ballDetectThreshold = 2525;
+int defaultManualSpeed = 58;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;
 int lastSpeedA = 0;
 int lastSpeedB = 0;
 int power = 0;
-float shooterMotorRaw = 0; //stores the current set speed for the shooter motors
+int shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastEncA = 0;    //The previous speed of the shooter
 int lastEncB = 0;
-int lastError = 0;
 int currentDistA = 0; //The current speed of the shooter
 int currentDistB = 0; //The current speed of the shooter
 int speedAverages = 0;
-float shooterTarget = 0;    //The target for the shooter PID loop
-bool isShooterReady = false;
-int shooterSmooth = 0; //used to smooth out the readiness detection for the shooter
+bool shooterState = false;
 bool alignState = false;
-bool alignReady = true;
+bool alignReady = false;
+int manualSetSpeed = 0;
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -184,43 +180,27 @@ void calculateShooter() {
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
-	float error = shooterTarget - speedAverages;              //Calculate an error based on the target
+	clearLCDLine(1);
 
-	//Calculate motor speed from error and accululated error
-	if (error > 8) {
+	if (speedAverages < 35 && !shooterState) {
 		shooterMotorRaw = 127;
-	}
-	else {
-		shooterMotorRaw = shooterMotorRaw + (error*0.4) - ((lastError - error) * 0.0);
-	}
+		shooterState = false;      //----------------
+		displayLCDCenteredString(1, "A - Speeding up ");
 
+	}else if (speedAverages < 25 && shooterState) {
+	  shooterMotorRaw = 127;
+		shooterState = false;      //----------------
+		displayLCDCenteredString(1, "A - Speeding up ");
 
-	writeDebugStreamLine("raw:%-4f, speed:%-4f error:%-4f, diff:%-4f ", shooterMotorRaw, speedAverages,error, lastError - error); //Debug ALL THE THINGS
+	}else {
+	  shooterMotorRaw = manualSetSpeed;
+	  shooterState = true;       //----------------
+		displayLCDCenteredString(1, "M - Set To %-4i ",manualSetSpeed);
+  }
+
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                                            //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }                                     //accumulation from going too crazy
 
-	//Determine if the motors are within a margin of the target speed
-	bool ready = (speed > shooterTarget - 1.5&& speed < shooterTarget + 1.5);
-	if (ready) { shooterSmooth += 1; }                                 //Smooth out the okay detection
-	else { shooterSmooth *= 0.5; }
-	isShooterReady = (ready && shooterSmooth >= shooterSmoothTrigger); //Set global variable based on smoothing value
-
-	//Set the insicators status (LED, LCD backlight, and LCD text)
-	SensorValue[ShooterReadyLED] = isShooterReady;
-	bLCDBacklight = isShooterReady;
-	if (isShooterReady) {
-		clearLCDLine(1);
-
-		displayLCDCenteredString(1, "READY!!!");
-	}
-	else {
-		clearLCDLine(1);
-		displayLCDCenteredString(1, "wait...");
-	}
-	//Debug output!
-	//writeDebugStreamLine("target: %-4f speed: %-4f Motors: %i Battery: %f", shooterTarget, shooterAverage, shooterMotorRaw, nImmediateBatteryLevel/1000.0);
-	//writeDebugStreamLine("%i",nTimeXX);
-	lastError = error;
 }
 
 //Takes manual joystick inputs to control solenoids
@@ -255,24 +235,11 @@ void pre_auton() {
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	shooterTarget = optimalShooterSpd;
 	SensorValue[shootSolenoid] = 1;
 	if (!SensorValue[autonJumper]) {
 		while (true) {
-			calculateShooter();                //Calculate the shooter's speed and the motor speed
-
-			if (SensorValue[ballDetect] < ballDetectThreshold | !isShooterReady) {
-        SensorValue[shootSolenoid] = 1;
-      }
-			if (isShooterReady){
-				SensorValue[shootSolenoid] = 0;
-			}
-
-			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
-
 		}
 	}
-	shooterTarget = 0;
 	setShooterMotors(0);
 
 }
@@ -282,7 +249,6 @@ task usercontrol() {
 	//Main operator control loop
 	clearTimer(T4);
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
-	shooterTarget = 0;
 	alignState = false;
 	setShooterMotors(0);
 	while (true) {
@@ -299,7 +265,6 @@ task usercontrol() {
 
 		//bring the shooter to a full stop permanently
 		if (vexRT[joyShooterZero] == 1) {
-			shooterTarget = 0;
 			shooterMotorRaw = 0;
 			setShooterMotors(0);
 			power = 0;
@@ -307,22 +272,18 @@ task usercontrol() {
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
-			shooterTarget += shooterIncrement;
 			power++;
 
 			//Decrement the target
 		}
 		else if (vexRT[joyShooterIncD] == 1) {
-			shooterTarget -= shooterIncrement;
 			power--;
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
-			shooterTarget = optimalShooterSpd;
 			power = 58;
 		} //shooter button if statements
 
-		calculateShooter2();                //Calculate the shooter's speed and the motor speed
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		solenoidsManual(); //Get button innputs for solenoid control
