@@ -181,6 +181,7 @@ void calculateShooter() {
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
 	clearLCDLine(1);
+	bLCDBacklight = true;
   string str;
 
 	if (speedAverages < 20 && shooterState) {
