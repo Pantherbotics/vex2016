@@ -125,21 +125,18 @@ int ballDetectThreshold = 2525;
 int defaultManualSpeed = 58;
 
 //--------------------Variables--------------------//
-int lastSysTime = 0;
-int lastSpeedA = 0;
-int lastSpeedB = 0;
-int power = 0;
+int lastSysTime = 0; //Stores the previous system time
+int lastSpeedA = 0;  //The previously measured speed for shooter encoder A
+int lastSpeedB = 0;  //The previously measured speed for shooter encoder B
 int shooterMotorRaw = 0; //stores the current set speed for the shooter motors
-int lastEncA = 0;    //The previous speed of the shooter
-int lastEncB = 0;
-int currentDistA = 0; //The current speed of the shooter
-int currentDistB = 0; //The current speed of the shooter
-int speedAverages = 0;
-bool shooterState = false;
-bool alignState = false;
-bool alignReady = false;
-int manualSetSpeed = 0;
-bool ready = false;
+int lastEncA = 0;     //The previous encoder count of shooter encoder A
+int lastEncB = 0;      //The previous encoder count of shooter encoder B
+int currentDistA = 0;  //The current encoder count of shooter encoder A
+int currentDistB = 0;  //The current encoder count of shooter encoder B
+int speedAverages = 0; //The calculated average of both shooter encoders
+bool shooterState = false; //if false, speed is governed automatically, if true, manual control
+int manualSetSpeed = 0;  //the manually adjusted speed
+bool ready = false;  //true if the shooter is within a wide margin of the target speed
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -204,14 +201,14 @@ void calculateShooter() {
   }
 
   displayLCDCenteredString(1, str);
-	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                                            //Clamp the motor output to prevent error
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }                                     //accumulation from going too crazy
+	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
+	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
 }
 
 //Takes manual joystick inputs to control solenoids
 void solenoidsManual() {
-	if (vexRT[joyRampActivate] && !alignState) {
+	if (vexRT[joyRampActivate] ) {
 		SensorValue[rampSolenoidA] = 1; //Set the state of the ramp
 		SensorValue[rampSolenoidB] = 1; //Set the state of the ramp
 	}
@@ -219,13 +216,7 @@ void solenoidsManual() {
 		SensorValue[rampSolenoidA] = 0; //Set the state of the ramp
 		SensorValue[rampSolenoidB] = 0; //Set the state of the ramp
 	}
-	if (vexRT[joyAlignActivate]) {
-		if (alignReady)
-			alignState = !alignState;
-		alignReady = false;
-	}
-	else { alignReady = true; }
-	SensorValue[alignSolenoid] = alignState;
+
 	//SensorValue[shootSolenoid] = vexRT[JoyShooterManual];
 }
 
@@ -270,7 +261,6 @@ task usercontrol() {
 	//Main operator control loop
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	manualSetSpeed = defaultManualSpeed;
-	alignState = false;
 	setShooterMotors(0);
 	ClearTimer(T2);
 	while (true) {
