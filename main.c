@@ -169,7 +169,7 @@ void calculateShooter() {
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
 	float speedB = ((currentDistB - lastEncB) * 50.0 / ((currSysTime) - lastSysTime));
-	speedAverages = (lastSpeedA+lastSpeedB+speed+speedB)/4
+	speedAverages = (lastSpeedA+lastSpeedB+speed+speedB)/4;
 	//speedAverages = (speed+speedB)/2
 	lastSpeedA = speed;
 	lastSpeedB = speedB;
@@ -233,8 +233,7 @@ void pre_auton() {
 //--------------------Autonomous mode--------------------//
 task autonomous() {
 	SensorValue[shootSolenoid] = 1;
-	int state = 0;
-	ClearTimer(T1);
+	clearTimer(T1);
 	manualSetSpeed = defaultManualSpeed;
 		while (!SensorValue[autonJumper] && false) {
 
@@ -242,7 +241,7 @@ task autonomous() {
 
 			if (ready) {
 				SensorValue[shootSolenoid] = 0;
-				ClearTimer(T1);
+				clearTimer(T1);
 			}
 			else if (!ready && time1[T1] > 500) {
 				SensorValue[shootSolenoid] = 1;
@@ -262,7 +261,7 @@ task usercontrol() {
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
-	ClearTimer(T2);
+	clearTimer(T2);
 	while (true) {
 
 		int x = vexRT[joyDriveA];
@@ -302,7 +301,7 @@ task usercontrol() {
 		displayLCDCenteredString(0, str);
     if (time1[T2] > 1300) {
 				//SensorValue[shootSolenoid] = 0;
-				ClearTimer(T2);
+				clearTimer(T2);
 		}
 
 		calculateShooter();
