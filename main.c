@@ -183,12 +183,12 @@ void calculateShooter() {
 	clearLCDLine(1);
   string str;
 
-	if (speedAverages < 35 && !shooterState) {
+	if (speedAverages < 20 && shooterState) {
 		shooterMotorRaw = 127;
 		shooterState = false;      //----------------
 		str = "A - Speeding up ";
 
-	}else if (speedAverages < 20 && shooterState) {
+	}else if (speedAverages < 35 && !shooterState) {
 	  shooterMotorRaw = 127;
 		shooterState = false;      //----------------
 		str = "A - Speeding up ";
@@ -196,7 +196,7 @@ void calculateShooter() {
 	}else {
 	  shooterMotorRaw = manualSetSpeed;
 	  shooterState = true;       //----------------
-	  stringFormat(str, "M - p:%-3i s:%-2i",manualSetSpeed,speedAverages);
+	  stringFormat(str, "M p:%-3i s:%-2i/39",manualSetSpeed,speedAverages);
   }
 
   displayLCDCenteredString(1, str);
