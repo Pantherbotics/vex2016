@@ -235,7 +235,7 @@ task autonomous() {
 	SensorValue[shootSolenoid] = 1;
 	clearTimer(T1);
 	manualSetSpeed = defaultManualSpeed;
-		while (!SensorValue[autonJumper] && false) {
+		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper] && false) {
 
 			calculateShooter();                //Calculate the shooter's speed and the motor speed
 
