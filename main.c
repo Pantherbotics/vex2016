@@ -139,6 +139,7 @@ bool shooterState = false;
 bool alignState = false;
 bool alignReady = false;
 int manualSetSpeed = 0;
+bool ready = false;
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -181,23 +182,25 @@ void calculateShooter() {
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
 	clearLCDLine(1);
-	bLCDBacklight = true;
+	bool ready = (speedAverages > 40 - 3.5&& speedAverages < 40 + 3.5);
+  bLCDBacklight = ready;
+
   string str;
 
 	if (speedAverages < 20 && shooterState) {
 		shooterMotorRaw = 127;
 		shooterState = false;      //----------------
-		str = "A - Speeding up ";
+		stringFormat(str, "A p:%-3i s:%-2i/40",127,speedAverages);
 
 	}else if (speedAverages < 35 && !shooterState) {
 	  shooterMotorRaw = 127;
 		shooterState = false;      //----------------
-		str = "A - Speeding up ";
+		stringFormat(str, "A p:%-3i s:%-2i/40",manualSetSpeed,speedAverages);
 
 	}else {
 	  shooterMotorRaw = manualSetSpeed;
 	  shooterState = true;       //----------------
-	  stringFormat(str, "M p:%-3i s:%-2i/39",manualSetSpeed,speedAverages);
+	  stringFormat(str, "M p:%-3i s:%-2i/40",manualSetSpeed,speedAverages);
   }
 
   displayLCDCenteredString(1, str);
@@ -239,10 +242,25 @@ void pre_auton() {
 //--------------------Autonomous mode--------------------//
 task autonomous() {
 	SensorValue[shootSolenoid] = 1;
-	if (!SensorValue[autonJumper]) {
-		while (true) {
+	int state = 0;
+	ClearTimer(T1);
+	manualSetSpeed = defaultManualSpeed;
+		while (!SensorValue[autonJumper] && false) {
+
+			calculateShooter();                //Calculate the shooter's speed and the motor speed
+
+			if (ready) {
+				SensorValue[shootSolenoid] = 0;
+				ClearTimer(T1);
+			}
+			else if (!ready && time1[T1] > 500) {
+				SensorValue[shootSolenoid] = 1;
+			}
+
+			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
 		}
-	}
+
 	setShooterMotors(0);
 
 }
@@ -250,11 +268,11 @@ task autonomous() {
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
 	//Main operator control loop
-	clearTimer(T4);
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	manualSetSpeed = defaultManualSpeed;
 	alignState = false;
 	setShooterMotors(0);
+	ClearTimer(T2);
 	while (true) {
 
 		int x = vexRT[joyDriveA];
@@ -288,6 +306,14 @@ task usercontrol() {
 			manualSetSpeed = 58;
 		} //shooter button if statements
 
+		clearLCDLine(0);
+		string str;
+		stringFormat(str, "Timer:%ims",time1[T2]);
+		displayLCDCenteredString(0, str);
+    if (time1[T2] > 1300) {
+				//SensorValue[shootSolenoid] = 0;
+				ClearTimer(T2);
+		}
 
 		calculateShooter();
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
