@@ -122,7 +122,7 @@ int nSysTime;
 
 //--------------------Constants--------------------//
 int ballDetectThreshold = 2525;
-int defaultManualSpeed = 58;
+int defaultManualSpeed = 60;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0; //Stores the previous system time
@@ -135,7 +135,7 @@ int currentDistA = 0;  //The current encoder count of shooter encoder A
 int currentDistB = 0;  //The current encoder count of shooter encoder B
 int speedAverages = 0; //The calculated average of both shooter encoders
 bool shooterState = false; //if false, speed is governed automatically, if true, manual control
-int manualSetSpeed = 0;  //the manually adjusted speed
+float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;  //true if the shooter is within a wide margin of the target speed
 
 //--------------------Helper Functions-------------//
@@ -283,12 +283,12 @@ task usercontrol() {
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
-			manualSetSpeed++;
+			manualSetSpeed+= 0.5;
 
 			//Decrement the target
 		}
 		else if (vexRT[joyShooterIncD] == 1) {
-			manualSetSpeed--;
+			manualSetSpeed-=0.5;
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
