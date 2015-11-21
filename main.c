@@ -123,17 +123,18 @@ int nSysTime;
 //--------------------Constants--------------------//
 int ballDetectThreshold = 2525;
 int defaultManualSpeed = 60;
+int optimalSpeed = 39;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0; //Stores the previous system time
-int lastSpeedA = 0;  //The previously measured speed for shooter encoder A
-int lastSpeedB = 0;  //The previously measured speed for shooter encoder B
+float lastSpeedA = 0;  //The previously measured speed for shooter encoder A
+float lastSpeedB = 0;  //The previously measured speed for shooter encoder B
 int shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastEncA = 0;     //The previous encoder count of shooter encoder A
 int lastEncB = 0;      //The previous encoder count of shooter encoder B
 int currentDistA = 0;  //The current encoder count of shooter encoder A
 int currentDistB = 0;  //The current encoder count of shooter encoder B
-int speedAverages = 0; //The calculated average of both shooter encoders
+float speedAverages = 0; //The calculated average of both shooter encoders
 bool shooterState = false; //if false, speed is governed automatically, if true, manual control
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;  //true if the shooter is within a wide margin of the target speed
@@ -179,26 +180,17 @@ void calculateShooter() {
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
 	clearLCDLine(1);
-	bool ready = (speedAverages > 40 - 3.5&& speedAverages < 40 + 3.5);
+	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
   bLCDBacklight = ready;
-
+  float error = optimalSpeed - speedAverages;
+  if (error < 0) {error = 0;}
   string str;
 
-	if (speedAverages < 20 && shooterState) {
-		shooterMotorRaw = 127;
-		shooterState = false;      //----------------
-		stringFormat(str, "A p:%-3i s:%-2i/40",127,speedAverages);
 
-	}else if (speedAverages < 35 && !shooterState) {
-	  shooterMotorRaw = 127;
-		shooterState = false;      //----------------
-		stringFormat(str, "A p:%-3i s:%-2i/40",manualSetSpeed,speedAverages);
+  shooterMotorRaw = manualSetSpeed + error*3.0;
 
-	}else {
-	  shooterMotorRaw = manualSetSpeed;
-	  shooterState = true;       //----------------
-	  stringFormat(str, "M p:%-3i s:%-2i/40",manualSetSpeed,speedAverages);
-  }
+	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
+
 
   displayLCDCenteredString(1, str);
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
