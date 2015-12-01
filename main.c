@@ -138,7 +138,7 @@ float speedAverages = 0; //The calculated average of both shooter encoders
 bool shooterState = false; //if false, speed is governed automatically, if true, manual control
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;  //true if the shooter is within a wide margin of the target speed
-
+float lastError = 0;
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
@@ -170,10 +170,10 @@ void calculateShooter() {
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
 	float speedB = ((currentDistB - lastEncB) * 50.0 / ((currSysTime) - lastSysTime));
-	speedAverages = (lastSpeedA+lastSpeedB+speed+speedB)/4;
-	//speedAverages = (speed+speedB)/2
+	speedAverages = speedAverages*0.9+ speed*0.1
 	lastSpeedA = speed;
 	lastSpeedB = speedB;
+  writeDebugStreamLine("%-4f %-4f",speed,speedAverages);
 
 	lastSysTime = currSysTime;
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
@@ -187,7 +187,8 @@ void calculateShooter() {
   string str;
 
 
-  shooterMotorRaw = manualSetSpeed + error*3.0;
+  shooterMotorRaw = shooterMotorRaw + error*5;
+  //shooterMotorRaw = shooterMotorRaw + (error*3) - ((lastError - error) * 0.5);
 
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
 
@@ -195,7 +196,7 @@ void calculateShooter() {
   displayLCDCenteredString(1, str);
 	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
-
+  float lastError = error;
 }
 
 //Takes manual joystick inputs to control solenoids
