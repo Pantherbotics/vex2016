@@ -122,8 +122,8 @@ int nSysTime;
 
 //--------------------Constants--------------------//
 int ballDetectThreshold = 2525;
-int defaultManualSpeed = 60;
-int optimalSpeed = 39;
+int defaultManualSpeed = 85;
+int optimalSpeed = 41.5;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0; //Stores the previous system time
@@ -183,19 +183,22 @@ void calculateShooter() {
 	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
   bLCDBacklight = ready;
   float error = optimalSpeed - speedAverages;
-  if (error < 0) {error = 0;}
+  float gain = 2.9;
+  if (abs(error) < 0.5) {error = error*-0.4;}
+  //if (error < -1 && error < 0) {error = 0;}
   string str;
 
 
-  shooterMotorRaw = shooterMotorRaw + error*5;
-  //shooterMotorRaw = shooterMotorRaw + (error*3) - ((lastError - error) * 0.5);
+  shooterMotorRaw = manualSetSpeed + error*gain;
+  //shooterMotorRaw = manualSetSpeed + (error*3) - ((lastError - error) * 0.5);
+  if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
+	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
 
 
   displayLCDCenteredString(1, str);
-	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
+
   float lastError = error;
 }
 
