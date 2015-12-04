@@ -173,7 +173,7 @@ void calculateShooter() {
 	speedAverages = speedAverages*0.9+ speed*0.1
 	lastSpeedA = speed;
 	lastSpeedB = speedB;
-  writeDebugStreamLine("%-4f %-4f",speed,speedAverages);
+  //writeDebugStreamLine("%-4f %-4f",speed,speedAverages);
 
 	lastSysTime = currSysTime;
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
@@ -258,6 +258,8 @@ task usercontrol() {
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
 	clearTimer(T2);
+	ClearTimer(T3);
+	int lastShootTime = 0;
 	while (true) {
 
 		int x = vexRT[joyDriveA];
@@ -293,14 +295,22 @@ task usercontrol() {
 
 		clearLCDLine(0);
 		string str;
-		stringFormat(str, "Timer:%ims",time1[T2]);
+		stringFormat(str, "Timer:%ims",lastShootTime);
 		displayLCDCenteredString(0, str);
     if (time1[T2] > 1300) {
 				//SensorValue[shootSolenoid] = 0;
 				clearTimer(T2);
 		}
 
+
+		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
+			lastShootTime = time1[T3];
+			writeDebugStreamLine("%i",lastShootTime);
+			clearTimer(T3);
+		}
+
 		calculateShooter();
+		if (time1[T3] < 300) {shooterMotorRaw = 127;}
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		solenoidsManual(); //Get button innputs for solenoid control
