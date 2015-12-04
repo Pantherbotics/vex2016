@@ -242,8 +242,7 @@ task usercontrol() {
 		stringFormat(str, "Timer:%ims",lastShootTime);
 		displayLCDCenteredString(0, str);
 
-
-
+		//Record the time since the last ball was shot
 		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
 			lastShootTime = time1[T3];
 			writeDebugStreamLine("%i",lastShootTime);
@@ -251,7 +250,7 @@ task usercontrol() {
 		}
 
 		calculateShooter();
-		if (time1[T3] < 300) {shooterMotorRaw = 127;}
+		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		solenoidsManual(); //Get button innputs for solenoid control
