@@ -201,8 +201,7 @@ task usercontrol() {
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
-	clearTimer(T2);
-	ClearTimer(T3);
+	clearTimer(T3);
 	int lastShootTime = 0;
 	while (true) {
 
@@ -237,14 +236,12 @@ task usercontrol() {
 			manualSetSpeed = 58;
 		} //shooter button if statements
 
+		//Display the last shooter time on the LCD
 		clearLCDLine(0);
 		string str;
 		stringFormat(str, "Timer:%ims",lastShootTime);
 		displayLCDCenteredString(0, str);
-    if (time1[T2] > 1300) {
-				//SensorValue[shootSolenoid] = 0;
-				clearTimer(T2);
-		}
+
 
 
 		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
