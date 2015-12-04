@@ -126,9 +126,6 @@ void calculateShooter() {
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
-	clearLCDLine(1);
-	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
-  bLCDBacklight = ready;
   float error = optimalSpeed - speedAverages;
   if (abs(error) < 0.5) {error = error*-0.4;}
 
@@ -139,9 +136,10 @@ void calculateShooter() {
   if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
+	clearLCDLine(1);
+	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
+  bLCDBacklight = ready;
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
-
-
   displayLCDCenteredString(1, str);
 
   float lastError = error;
