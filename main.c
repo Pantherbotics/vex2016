@@ -86,10 +86,8 @@ int shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastEncA = 0;      //The previous encoder count of shooter encoder A
 int currentDistA = 0;  //The current encoder count of shooter encoder A
 float speedAverages = 0; //The calculated average of both shooter encoders
-bool shooterState = false; //if false, speed is governed automatically, if true, manual control
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;       //true if the shooter is within a wide margin of the target speed
-float lastError = 0;   //Stores the previous encoder error
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -117,21 +115,24 @@ void calculateShooter() {
 	currentDistA = -SensorValue[encShooterLeft7B];    //Get the current speed of the shooter SensorValue[encShooterRight2]
 	int currSysTime;
 
-	//Calculate the motor speed based on the system timer and the motor distance. Average the results
+	//Calculate the motor speed based on the system timer and the motor distance. Average the results, weighing
+	//heavily on the previous value
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
 	speedAverages = speedAverages*0.9+ speed*0.1;
-	lastSpeedA = speed;
 
+	//Save the previous states for next iteration
+	lastSpeedA = speed;
 	lastSysTime = currSysTime;
+
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
 	else if (speed < -80) { speed = -80; }    // (prevents it from generating erronously high values)
 
+	//Calculate error and add in a reversal gain if we are approaching the speed
+	//(prevents overshooting due to the flywheel behavior of the shooter wheels)
   float error = optimalSpeed - speedAverages;
   if (abs(error) < 0.5) {error = error*-0.4;}
 
-  string str;
-
-
+  //Calculate power based on the error
   shooterMotorRaw = manualSetSpeed + error*2.9;
   if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
@@ -139,10 +140,10 @@ void calculateShooter() {
 	clearLCDLine(1);
 	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
   bLCDBacklight = ready;
+  string str;
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
   displayLCDCenteredString(1, str);
 
-  float lastError = error;
 }
 
 //Takes manual joystick inputs to control solenoids
