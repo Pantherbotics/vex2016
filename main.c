@@ -122,8 +122,8 @@ int nSysTime;
 
 //--------------------Constants--------------------//
 int ballDetectThreshold = 2525;
-int defaultManualSpeed = 60;
-int optimalSpeed = 39;
+int defaultManualSpeed = 85;
+int optimalSpeed = 41.5;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0; //Stores the previous system time
@@ -138,7 +138,7 @@ float speedAverages = 0; //The calculated average of both shooter encoders
 bool shooterState = false; //if false, speed is governed automatically, if true, manual control
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;  //true if the shooter is within a wide margin of the target speed
-
+float lastError = 0;
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
 void setDriveMotors(int fL, int fR, int bL, int bR) {
@@ -170,10 +170,10 @@ void calculateShooter() {
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
 	float speedB = ((currentDistB - lastEncB) * 50.0 / ((currSysTime) - lastSysTime));
-	speedAverages = (lastSpeedA+lastSpeedB+speed+speedB)/4;
-	//speedAverages = (speed+speedB)/2
+	speedAverages = speedAverages*0.9+ speed*0.1
 	lastSpeedA = speed;
 	lastSpeedB = speedB;
+  //writeDebugStreamLine("%-4f %-4f",speed,speedAverages);
 
 	lastSysTime = currSysTime;
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
@@ -183,19 +183,23 @@ void calculateShooter() {
 	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
   bLCDBacklight = ready;
   float error = optimalSpeed - speedAverages;
-  if (error < 0) {error = 0;}
+  float gain = 2.9;
+  if (abs(error) < 0.5) {error = error*-0.4;}
+  //if (error < -1 && error < 0) {error = 0;}
   string str;
 
 
-  shooterMotorRaw = manualSetSpeed + error*3.0;
+  shooterMotorRaw = manualSetSpeed + error*gain;
+  //shooterMotorRaw = manualSetSpeed + (error*3) - ((lastError - error) * 0.5);
+  if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
+	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
 
 
   displayLCDCenteredString(1, str);
-	if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
+  float lastError = error;
 }
 
 //Takes manual joystick inputs to control solenoids
@@ -254,6 +258,8 @@ task usercontrol() {
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
 	clearTimer(T2);
+	ClearTimer(T3);
+	int lastShootTime = 0;
 	while (true) {
 
 		int x = vexRT[joyDriveA];
@@ -289,14 +295,22 @@ task usercontrol() {
 
 		clearLCDLine(0);
 		string str;
-		stringFormat(str, "Timer:%ims",time1[T2]);
+		stringFormat(str, "Timer:%ims",lastShootTime);
 		displayLCDCenteredString(0, str);
     if (time1[T2] > 1300) {
 				//SensorValue[shootSolenoid] = 0;
 				clearTimer(T2);
 		}
 
+
+		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
+			lastShootTime = time1[T3];
+			writeDebugStreamLine("%i",lastShootTime);
+			clearTimer(T3);
+		}
+
 		calculateShooter();
+		if (time1[T3] < 300) {shooterMotorRaw = 127;}
 		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		solenoidsManual(); //Get button innputs for solenoid control
