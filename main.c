@@ -130,14 +130,12 @@ void calculateShooter() {
 	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
   bLCDBacklight = ready;
   float error = optimalSpeed - speedAverages;
-  float gain = 2.9;
   if (abs(error) < 0.5) {error = error*-0.4;}
-  //if (error < -1 && error < 0) {error = 0;}
+
   string str;
 
 
-  shooterMotorRaw = manualSetSpeed + error*gain;
-  //shooterMotorRaw = manualSetSpeed + (error*3) - ((lastError - error) * 0.5);
+  shooterMotorRaw = manualSetSpeed + error*2.9;
   if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
