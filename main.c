@@ -82,12 +82,9 @@ int optimalSpeed = 41.5;
 //--------------------Variables--------------------//
 int lastSysTime = 0;   //Stores the previous system time
 float lastSpeedA = 0;  //The previously measured speed for shooter encoder A
-float lastSpeedB = 0;  //The previously measured speed for shooter encoder B
 int shooterMotorRaw = 0; //stores the current set speed for the shooter motors
 int lastEncA = 0;      //The previous encoder count of shooter encoder A
-int lastEncB = 0;      //The previous encoder count of shooter encoder B
 int currentDistA = 0;  //The current encoder count of shooter encoder A
-int currentDistB = 0;  //The current encoder count of shooter encoder B
 float speedAverages = 0; //The calculated average of both shooter encoders
 bool shooterState = false; //if false, speed is governed automatically, if true, manual control
 float manualSetSpeed = 0;  //the manually adjusted speed
@@ -116,19 +113,14 @@ void setShooterMotors(int power) {
 void calculateShooter() {
 	wait1Msec(50);
 	lastEncA = currentDistA;                   //Get the prevoius speed of the shooter
-	lastEncB = currentDistB;                   //Get the prevoius speed of the shooter
 
 	currentDistA = -SensorValue[encShooterLeft7B];    //Get the current speed of the shooter SensorValue[encShooterRight2]
-	currentDistB = SensorValue[encShooterRight2];    //Get the current speed of the shooter SensorValue[encShooterRight2]
 	int currSysTime;
 
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
-	float speedB = ((currentDistB - lastEncB) * 50.0 / ((currSysTime) - lastSysTime));
 	speedAverages = speedAverages*0.9+ speed*0.1;
 	lastSpeedA = speed;
-	lastSpeedB = speedB;
-  //writeDebugStreamLine("%-4f %-4f",speed,speedAverages);
 
 	lastSysTime = currSysTime;
 	if (speed > 80) { speed = 80; }           //Clamp the aspeed to make sure it doesn't go over 50/s
