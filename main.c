@@ -75,9 +75,9 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 #define joyShooterAuto   Btn8L //Toggles automatic triggering of the shooter solenoid
 
 //--------------------Constants--------------------//
-int ballDetectThreshold = 2525;
-int defaultManualSpeed = 85;
-int optimalSpeed = 41.5;
+const int ballDetectThreshold = 2525;
+const int defaultManualSpeed = 85;
+const int optimalSpeed = 41.5;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;   //Stores the previous system time
