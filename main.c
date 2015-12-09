@@ -77,7 +77,7 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525;
 const int defaultManualSpeed = 75;
-const int optimalSpeed = 39.0
+const int optimalSpeed = 46.0
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;   //Stores the previous system time
