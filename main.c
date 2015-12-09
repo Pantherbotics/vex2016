@@ -77,7 +77,7 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 //--------------------Constants--------------------//
 int ballDetectThreshold = 2525;
 int defaultManualSpeed = 85;
-int optimalSpeed = 41.5;
+int optimalSpeed = 39.0;
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;   //Stores the previous system time
@@ -130,7 +130,9 @@ void calculateShooter() {
 	//Calculate error and add in a reversal gain if we are approaching the speed
 	//(prevents overshooting due to the flywheel behavior of the shooter wheels)
   float error = optimalSpeed - speedAverages;
-  if (abs(error) < 0.5) {error = error*-0.4;}
+  if (abs(error) < 0.25) {error = 0;}
+  else if (abs(error) < 0.5) {error = error*-0.35;}
+
 
   //Calculate power based on the error
   shooterMotorRaw = manualSetSpeed + error*2.9;
