@@ -88,6 +88,7 @@ int currentDistA = 0;  //The current encoder count of shooter encoder A
 float speedAverages = 0; //The calculated average of both shooter encoders
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;       //true if the shooter is within a wide margin of the target speed
+int lastShootTime = 0;
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -140,7 +141,7 @@ void calculateShooter() {
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
 	clearLCDLine(1);
-	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
+	ready = (speedAverages > optimalSpeed - 1 && speedAverages < optimalSpeed + 1);
   bLCDBacklight = ready;
   string str;
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
@@ -165,7 +166,7 @@ void solenoidsManual() {
 //--------------------Initalization Code--------------------//
 void pre_auton() {
 	bStopTasksBetweenModes = false; //Set false for user tasks to run between mode switches
-	SensorValue[shootSolenoid] = 1;
+	SensorValue[shootSolenoid] = 0;
 	SensorValue[rampSolenoidA] = 0;
 	SensorValue[rampSolenoidB] = 0;
 	SensorValue[alignSolenoid] = 1;
@@ -174,26 +175,49 @@ void pre_auton() {
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	SensorValue[shootSolenoid] = 1;
+	SensorValue[shootSolenoid] = 0;
 	clearTimer(T1);
+	clearTimer(T3);
+	int state = 0;
+	ready = false;
+	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
-		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper] && false) {
-
-			calculateShooter();                //Calculate the shooter's speed and the motor speed
-
-			if (ready) {
-				SensorValue[shootSolenoid] = 0;
-				clearTimer(T1);
-			}
-			else if (!ready && time1[T1] > 500) {
+		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
+			if (ready && state == 0) {
 				SensorValue[shootSolenoid] = 1;
-			}
+				clearTimer(T1);
+				state = 1;
 
+			}else if (state == 1 && time1[T1] > 300 && ready){
+	  		SensorValue[shootSolenoid] = 0;
+				clearTimer(T1);
+				state = 2;
+
+		  }else if (state == 2 && time1[T1] > 300) {
+		    SensorValue[shootSolenoid] = 1;
+		    state = 3;
+
+		  }else if (state == 3 && time1[T1] > 300 && ready) {
+		    SensorValue[shootSolenoid] = 0;
+				clearTimer(T1);
+
+				state = 1;}
+
+			if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
+			  lastShootTime = time1[T3];
+		  	writeDebugStreamLine("%i",lastShootTime);
+		  	clearTimer(T3);
+		  }
+		  writeDebugStreamLine("T1%i T3%i ready %i  %f",time1[T3],time1[T1],ready, speedAverages);
+
+		  calculateShooter();                //Calculate the shooter's speed and the motor speed
+      if (time1[T3] < 300) {shooterMotorRaw = 127;}
 			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		}
 
 	setShooterMotors(0);
+
 
 }
 
@@ -204,7 +228,7 @@ task usercontrol() {
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
 	clearTimer(T3);
-	int lastShootTime = 0;
+
 	while (true) {
 
 		int x = vexRT[joyDriveA];
