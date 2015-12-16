@@ -7,12 +7,12 @@
 #pragma config(Sensor, dgtl5,  tournamentJumper, sensorDigitalIn)
 #pragma config(Sensor, dgtl6,  autonJumper,    sensorDigitalIn)
 #pragma config(Sensor, dgtl12, ShooterReadyLED, sensorLEDtoVCC)
-#pragma config(Sensor, I2C_1,  encLeftFront10, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_2,  encShooterLeft7B, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_3,  encLeftBack6,   sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_4,  endBackRight5,  sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_5,  encShooterRight2, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_6,  encRightFront1, sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_1,  encLeftFront10, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_2,  encShooterLeft7B, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_3,  encLeftBack6,   sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_4,  endBackRight5,  sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_5,  encShooterRight2, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_6,  encRightFront1, sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Motor,  port1,           mFrontRight,   tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           mShooter2,     tmotorVex393HighSpeed_MC29, openLoop)
 #pragma config(Motor,  port3,           mShooter3,     tmotorVex393HighSpeed_MC29, openLoop, reversed)
@@ -76,7 +76,7 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525;
-const int defaultManualSpeed = 85;
+const int defaultManualSpeed = 75;
 const int optimalSpeed = 39.0
 
 //--------------------Variables--------------------//
@@ -113,9 +113,8 @@ void calculateShooter() {
 	wait1Msec(50);
 	lastEncA = currentDistA;                   //Get the prevoius speed of the shooter
 
-	currentDistA = -SensorValue[encShooterLeft7B];    //Get the current speed of the shooter SensorValue[encShooterRight2]
+	currentDistA = SensorValue[encShooterRight2];    //Get the current speed of the shooter SensorValue[encShooterRight2]
 	int currSysTime;
-
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results, weighing
 	//heavily on the previous value
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
@@ -136,7 +135,7 @@ void calculateShooter() {
 
 
   //Calculate power based on the error
-  shooterMotorRaw = manualSetSpeed + error*2.9;
+  shooterMotorRaw = manualSetSpeed+ error*2.9;
   if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
@@ -183,24 +182,24 @@ task autonomous() {
 	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
 		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
-			if (ready && state == 0) {
+			if (ready && state == 0) { //Robot is spinning up, 0 balls shot
 				SensorValue[shootSolenoid] = 1;
 				clearTimer(T1);
 				state = 1;
 
-			}else if (state == 1 && time1[T1] > 300 && ready){
-	  		SensorValue[shootSolenoid] = 0;
+			}else if (state == 1){     //Robot is spun up, 1 ball shot
+	  		SensorValue[shootSolenoid] = 1;
 				clearTimer(T1);
 				state = 2;
 
-		  }else if (state == 2 && time1[T1] > 300) {
-		    SensorValue[shootSolenoid] = 1;
-		    state = 3;
-
-		  }else if (state == 3 && time1[T1] > 300 && ready) {
+		  }else if (state == 2 && time1[T1] > 1000 && ready) { //Robot is spun up, 1 ball shot
 		    SensorValue[shootSolenoid] = 0;
-				clearTimer(T1);
+		    state = 3;
+		    clearTimer(T1);
 
+		  }else if (state == 3 && time1[T1] > 1000) {
+		    //SensorValue[shootSolenoid] = 1;
+				clearTimer(T1);
 				state = 1;}
 
 			if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
