@@ -88,7 +88,8 @@ int currentDistA = 0;  //The current encoder count of shooter encoder A
 float speedAverages = 0; //The calculated average of both shooter encoders
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;       //true if the shooter is within a wide margin of the target speed
-int lastShootTime = 0;
+int lastShootTime = 0;    //stores the time inbetween the last recorded shot (ms)
+int targetSpeed = optimalSpeed; //Stores the target speed the wheels are trying to achieve
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -129,7 +130,8 @@ void calculateShooter() {
 
 	//Calculate error and add in a reversal gain if we are approaching the speed
 	//(prevents overshooting due to the flywheel behavior of the shooter wheels)
-  float error = optimalSpeed - speedAverages;
+  float error = targetSpeed - speedAverages;
+  if (targetSpeed == 0) {error=0;}
   if (abs(error) < 0.25) {error = 0;}
   else if (abs(error) < 0.5) {error = error*-0.35;}
 
@@ -153,6 +155,10 @@ void solenoidsManual() {
 	if (vexRT[joyRampActivate] ) {
 		SensorValue[rampSolenoidA] = 1; //Set the state of the ramp
 		SensorValue[rampSolenoidB] = 1; //Set the state of the ramp
+		  shooterMotorRaw = 0;
+			setShooterMotors(0);
+			manualSetSpeed = 0;
+      targetSpeed = 0;
 	}
 	else if (!vexRT[joyRampActivate]) {
 		SensorValue[rampSolenoidA] = 0; //Set the state of the ramp
@@ -234,6 +240,12 @@ task usercontrol() {
 		int y = vexRT[joyDriveB];
 		int z = (vexRT[joyTurnRight] - vexRT[joyTurnLeft]) * 127 + (vexRT[joyTurnRightSlow] - vexRT[joyTurnLeftSlow]) * 50;
 
+		calculateShooter();
+		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
+		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
+		solenoidsManual(); //Get button innputs for solenoid control
+
 		//Basic configuration for 4 meccanum wheel drive
 		setDriveMotors(x + z + y,
 			x - z - y,
@@ -245,7 +257,7 @@ task usercontrol() {
 			shooterMotorRaw = 0;
 			setShooterMotors(0);
 			manualSetSpeed = 0;
-
+      targetSpeed = 0;
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
@@ -258,7 +270,8 @@ task usercontrol() {
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
-			manualSetSpeed = 58;
+			manualSetSpeed = defaultManualSpeed;
+			targetSpeed = optimalSpeed;
 		} //shooter button if statements
 
 		//Display the last shooter time on the LCD
@@ -273,12 +286,6 @@ task usercontrol() {
 			writeDebugStreamLine("%i",lastShootTime);
 			clearTimer(T3);
 		}
-
-		calculateShooter();
-		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
-		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
-
-		solenoidsManual(); //Get button innputs for solenoid control
 
 	} //Main Loop
 
