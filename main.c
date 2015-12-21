@@ -197,7 +197,7 @@ task autonomous() {
 		    state = 3;
 		    clearTimer(T1);
 
-		  }else if (state == 3 && time1[T1] > 1000) {
+		  }else if (state == 3 && time1[T1] > 2000) {
 		    //SensorValue[shootSolenoid] = 1;
 				clearTimer(T1);
 				state = 1;}
@@ -207,10 +207,10 @@ task autonomous() {
 		  	writeDebugStreamLine("%i",lastShootTime);
 		  	clearTimer(T3);
 		  }
-		  writeDebugStreamLine("T1%i T3%i ready %i  %f",time1[T3],time1[T1],ready, speedAverages);
+		  //writeDebugStreamLine("T1%i T3%i ready %i  %f",time1[T3],time1[T1],ready, speedAverages);
 
 		  calculateShooter();                //Calculate the shooter's speed and the motor speed
-      if (time1[T3] < 300) {shooterMotorRaw = 127;}
+      //if (time1[T3] < 300) {shooterMotorRaw = 127;}
 			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		}
