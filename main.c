@@ -168,7 +168,6 @@ void pre_auton() {
 	SensorValue[shootSolenoid] = 0;
 	SensorValue[rampSolenoidA] = 0;
 	SensorValue[rampSolenoidB] = 0;
-	SensorValue[alignSolenoid] = 1;
 
 }
 
@@ -216,6 +215,7 @@ task autonomous() {
 		}
 
 	setShooterMotors(0);
+	SensorValue[shootSolenoid] = 0;
 
 
 }
