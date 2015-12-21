@@ -7,12 +7,12 @@
 #pragma config(Sensor, dgtl5,  tournamentJumper, sensorDigitalIn)
 #pragma config(Sensor, dgtl6,  autonJumper,    sensorDigitalIn)
 #pragma config(Sensor, dgtl12, ShooterReadyLED, sensorLEDtoVCC)
-#pragma config(Sensor, I2C_1,  encLeftFront10, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_2,  encShooterLeft7B, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_3,  encLeftBack6,   sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_4,  endBackRight5,  sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_5,  encShooterRight2, sensorQuadEncoderOnI2CPort,    , AutoAssign)
-#pragma config(Sensor, I2C_6,  encRightFront1, sensorQuadEncoderOnI2CPort,    , AutoAssign)
+#pragma config(Sensor, I2C_1,  encLeftFront10, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_2,  encShooterLeft7B, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_3,  encLeftBack6,   sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_4,  endBackRight5,  sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_5,  encShooterRight2, sensorQuadEncoderOnI2CPort,    , AutoAssign )
+#pragma config(Sensor, I2C_6,  encRightFront1, sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Motor,  port1,           mFrontRight,   tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           mShooter2,     tmotorVex393HighSpeed_MC29, openLoop)
 #pragma config(Motor,  port3,           mShooter3,     tmotorVex393HighSpeed_MC29, openLoop, reversed)
@@ -76,8 +76,8 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525;
-const int defaultManualSpeed = 85;
-const int optimalSpeed = 39.0
+const int defaultManualSpeed = 75;
+const int optimalSpeed = 46.0
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;   //Stores the previous system time
@@ -88,6 +88,8 @@ int currentDistA = 0;  //The current encoder count of shooter encoder A
 float speedAverages = 0; //The calculated average of both shooter encoders
 float manualSetSpeed = 0;  //the manually adjusted speed
 bool ready = false;       //true if the shooter is within a wide margin of the target speed
+int lastShootTime = 0;    //stores the time inbetween the last recorded shot (ms)
+int targetSpeed = optimalSpeed; //Stores the target speed the wheels are trying to achieve
 
 //--------------------Helper Functions-------------//
 //Helper function for setting all drive motors in one command
@@ -112,9 +114,8 @@ void calculateShooter() {
 	wait1Msec(50);
 	lastEncA = currentDistA;                   //Get the prevoius speed of the shooter
 
-	currentDistA = -SensorValue[encShooterLeft7B];    //Get the current speed of the shooter SensorValue[encShooterRight2]
+	currentDistA = SensorValue[encShooterRight2];    //Get the current speed of the shooter SensorValue[encShooterRight2]
 	int currSysTime;
-
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results, weighing
 	//heavily on the previous value
 	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
@@ -129,18 +130,19 @@ void calculateShooter() {
 
 	//Calculate error and add in a reversal gain if we are approaching the speed
 	//(prevents overshooting due to the flywheel behavior of the shooter wheels)
-  float error = optimalSpeed - speedAverages;
+  float error = targetSpeed - speedAverages;
+  if (targetSpeed == 0) {error=0;}
   if (abs(error) < 0.25) {error = 0;}
   else if (abs(error) < 0.5) {error = error*-0.35;}
 
 
   //Calculate power based on the error
-  shooterMotorRaw = manualSetSpeed + error*2.9;
+  shooterMotorRaw = manualSetSpeed+ error*2.9;
   if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }                    //Clamp the motor output to prevent error
 	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }             //accumulation from going too crazy
 
 	clearLCDLine(1);
-	bool ready = (speedAverages > optimalSpeed - 0.5&& speedAverages < optimalSpeed + 0.5);
+	ready = (speedAverages > optimalSpeed - 1 && speedAverages < optimalSpeed + 1);
   bLCDBacklight = ready;
   string str;
 	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
@@ -153,6 +155,10 @@ void solenoidsManual() {
 	if (vexRT[joyRampActivate] ) {
 		SensorValue[rampSolenoidA] = 1; //Set the state of the ramp
 		SensorValue[rampSolenoidB] = 1; //Set the state of the ramp
+		  shooterMotorRaw = 0;
+			setShooterMotors(0);
+			manualSetSpeed = 0;
+      targetSpeed = 0;
 	}
 	else if (!vexRT[joyRampActivate]) {
 		SensorValue[rampSolenoidA] = 0; //Set the state of the ramp
@@ -165,35 +171,58 @@ void solenoidsManual() {
 //--------------------Initalization Code--------------------//
 void pre_auton() {
 	bStopTasksBetweenModes = false; //Set false for user tasks to run between mode switches
-	SensorValue[shootSolenoid] = 1;
+	SensorValue[shootSolenoid] = 0;
 	SensorValue[rampSolenoidA] = 0;
 	SensorValue[rampSolenoidB] = 0;
-	SensorValue[alignSolenoid] = 1;
 
 }
 
 //--------------------Autonomous mode--------------------//
 task autonomous() {
-	SensorValue[shootSolenoid] = 1;
+	SensorValue[shootSolenoid] = 0;
 	clearTimer(T1);
+	clearTimer(T3);
+	int state = 0;
+	ready = false;
+	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
-		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper] && false) {
-
-			calculateShooter();                //Calculate the shooter's speed and the motor speed
-
-			if (ready) {
-				SensorValue[shootSolenoid] = 0;
-				clearTimer(T1);
-			}
-			else if (!ready && time1[T1] > 500) {
+		while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
+			if (ready && state == 0) { //Robot is spinning up, 0 balls shot
 				SensorValue[shootSolenoid] = 1;
-			}
+				clearTimer(T1);
+				state = 1;
 
+			}else if (state == 1){     //Robot is spun up, 1 ball shot
+	  		SensorValue[shootSolenoid] = 1;
+				clearTimer(T1);
+				state = 2;
+
+		  }else if (state == 2 && time1[T1] > 1000 && ready) { //Robot is spun up, 1 ball shot
+		    SensorValue[shootSolenoid] = 0;
+		    state = 3;
+		    clearTimer(T1);
+
+		  }else if (state == 3 && time1[T1] > 2000) {
+		    //SensorValue[shootSolenoid] = 1;
+				clearTimer(T1);
+				state = 1;}
+
+			if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
+			  lastShootTime = time1[T3];
+		  	writeDebugStreamLine("%i",lastShootTime);
+		  	clearTimer(T3);
+		  }
+		  //writeDebugStreamLine("T1%i T3%i ready %i  %f",time1[T3],time1[T1],ready, speedAverages);
+
+		  calculateShooter();                //Calculate the shooter's speed and the motor speed
+      //if (time1[T3] < 300) {shooterMotorRaw = 127;}
 			setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
 
 		}
 
 	setShooterMotors(0);
+	SensorValue[shootSolenoid] = 0;
+
 
 }
 
@@ -204,12 +233,18 @@ task usercontrol() {
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
 	clearTimer(T3);
-	int lastShootTime = 0;
+
 	while (true) {
 
 		int x = vexRT[joyDriveA];
 		int y = vexRT[joyDriveB];
 		int z = (vexRT[joyTurnRight] - vexRT[joyTurnLeft]) * 127 + (vexRT[joyTurnRightSlow] - vexRT[joyTurnLeftSlow]) * 50;
+
+		calculateShooter();
+		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
+		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
+
+		solenoidsManual(); //Get button innputs for solenoid control
 
 		//Basic configuration for 4 meccanum wheel drive
 		setDriveMotors(x + z + y,
@@ -222,7 +257,7 @@ task usercontrol() {
 			shooterMotorRaw = 0;
 			setShooterMotors(0);
 			manualSetSpeed = 0;
-
+      targetSpeed = 0;
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
@@ -235,7 +270,8 @@ task usercontrol() {
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
-			manualSetSpeed = 58;
+			manualSetSpeed = defaultManualSpeed;
+			targetSpeed = optimalSpeed;
 		} //shooter button if statements
 
 		//Display the last shooter time on the LCD
@@ -250,12 +286,6 @@ task usercontrol() {
 			writeDebugStreamLine("%i",lastShootTime);
 			clearTimer(T3);
 		}
-
-		calculateShooter();
-		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
-		setShooterMotors(shooterMotorRaw); //set the shooter motor's speed
-
-		solenoidsManual(); //Get button innputs for solenoid control
 
 	} //Main Loop
 
