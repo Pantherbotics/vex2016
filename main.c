@@ -75,7 +75,7 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525; //The threshold for the IR sensor to detect a ball being fired
 const int defaultManualSpeed = 75;    //What manual power we want it set to by default
-const int optimalSpeed = 46.0;         //The target speed we want to get the shooter to in order to make a goal
+const int optimalSpeed = 46.7;         //The target speed we want to get the shooter to in order to make a goal
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;     //Stores the previous system time
@@ -117,7 +117,7 @@ void calculateShooter() {
 	int currSysTime;
 	//Calculate the motor speed based on the system timer and the motor distance. Average the results, weighing
 	//heavily on the previous value to smooth out fluctuations
-	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime));
+	float speed = ((currentDistA - lastEncA) * 50.0 / ((currSysTime = nSysTime) - lastSysTime+1));
 	speedAverages = speedAverages*0.9+ speed*0.1;
 
 	//Save the previous states for next iteration
