@@ -74,7 +74,7 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525; //The threshold for the IR sensor to detect a ball being fired
-const int defaultManualSpeed = 75;    //What manual power we want it set to by default
+const int defaultManualSpeed = 75*6;    //What manual power we want it set to by default
 const int optimalSpeed = 46.7;         //The target speed we want to get the shooter to in order to make a goal
 
 //--------------------Variables--------------------//
@@ -100,12 +100,12 @@ void setDriveMotors(int fL, int fR, int bL, int bR) {
 
 //Sets  all shooter motors to the provided power
 void setShooterMotors(int power) {
-	motor[mShooter2] = power;
-	motor[mShooter3] = power;
-	motor[mShooter4] = power;
-	motor[mShooter7] = power;
-	motor[mShooter8] = power;
-	motor[mShooter9] = power;
+	motor[mShooter2] = (power+4)/6;
+	motor[mShooter3] = (power+2)/6;
+	motor[mShooter4] = (power+0)/6;
+	motor[mShooter7] = (power+5)/6;
+	motor[mShooter8] = (power+3)/6;
+	motor[mShooter9] = (power+1)/6;
 }
 
 //Measures shooter speed, calculates power, and updates LCD
@@ -137,9 +137,9 @@ void calculateShooter() {
   if (targetSpeed == 0) {error=0;}
 
   //Calculate power based on the error. Clamp the motor output to 127
-  shooterMotorRaw = manualSetSpeed+ error*2.9;
-  if (shooterMotorRaw > 127) { shooterMotorRaw = 127; }
-	else if (shooterMotorRaw < -127) { shooterMotorRaw = -127; }
+  shooterMotorRaw = manualSetSpeed+ error*2.9*6;
+  if (shooterMotorRaw <= 0) { shooterMotorRaw = 0; }
+
 
 	//Update the LCD
 	clearLCDLine(1);
@@ -236,6 +236,8 @@ task usercontrol() {
 
 		calculateShooter();
 		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
+		//The global shooterMotorRaw holds the power globally. it is passed to setShooterMotors. setShooterMotors should
+		//accept the power and set the motors accordingly
 		setShooterMotors(shooterMotorRaw);  //set the shooter motor's power
 
 		solenoidsManual(); //Get button innputs for solenoid control
