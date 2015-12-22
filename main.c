@@ -68,14 +68,17 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 #define joyShooterIncU Btn7U //Increment shooter speed
 #define joyShooterIncD Btn7D //Decrement the shooter speed
 #define joyShooterFull Btn7R //Set the shooter speed to the preset target
+#define joyShooterSpIU Btn8U
+#define joyShooterSpID Btn8D
+#define joyShooterSpIR Btn8R
 
 //Pneumatics Buttons
-#define joyRampActivate  Btn8U //Activates the ramp solenoids
+#define joyRampActivate  Btn8L //Activates the ramp solenoids
 
 //--------------------Constants--------------------//
 const int ballDetectThreshold = 2525; //The threshold for the IR sensor to detect a ball being fired
-const int defaultManualSpeed = 75*6;    //What manual power we want it set to by default
-const int optimalSpeed = 46.7;         //The target speed we want to get the shooter to in order to make a goal
+const int defaultManualSpeed = 480;    //What manual power we want it set to by default
+const int optimalSpeed = 47.5;         //The target speed we want to get the shooter to in order to make a goal
 
 //--------------------Variables--------------------//
 int lastSysTime = 0;     //Stores the previous system time
@@ -87,7 +90,7 @@ float speedAverages = 0; //The calculated average of both shooter encoders
 float manualSetSpeed = 0;//the manually adjusted speed
 bool ready = false;      //true if the shooter is within a wide margin of the target speed
 int lastShootTime = 0;   //stores the time inbetween the last recorded shot (ms)
-int targetSpeed = optimalSpeed; //Stores the target speed the wheels are trying to achieve
+float targetSpeed = optimalSpeed; //Stores the target speed the wheels are trying to achieve
 
 //--------------------Helper Functions-------------//
 //Sets all drive motors to provided powers
@@ -137,7 +140,7 @@ void calculateShooter() {
   if (targetSpeed == 0) {error=0;}
 
   //Calculate power based on the error. Clamp the motor output to 127
-  shooterMotorRaw = manualSetSpeed+ error*2.9*6;
+  shooterMotorRaw = manualSetSpeed+ error*(2.9*6.0);
   if (shooterMotorRaw <= 0) { shooterMotorRaw = 0; }
 
 
@@ -146,8 +149,12 @@ void calculateShooter() {
 	ready = (speedAverages > optimalSpeed - 1 && speedAverages < optimalSpeed + 1);
   bLCDBacklight = ready;
   string str;
-	stringFormat(str, "M %-2i/%-3is:%-2i/%i",manualSetSpeed,shooterMotorRaw,speedAverages,optimalSpeed);
+	stringFormat(str, "M %-2i/%-3i",manualSetSpeed,shooterMotorRaw);
   displayLCDCenteredString(1, str);
+	clearLCDLine(0);
+	string str2;
+	stringFormat(str2, "%2.2f/%2.2f",speedAverages,targetSpeed);
+	displayLCDCenteredString(0, str2);
 
 }
 
@@ -186,7 +193,7 @@ task autonomous() {
 	ready = false;
 	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
-	targetSpeed = optimalSpeed-0.5;
+	targetSpeed = optimalSpeed-1;
 	//Run only in auton mode and if auton is enabled
   while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
 		if (ready && state == 0) { //Robot is spinning up, 0 balls shot
@@ -235,7 +242,7 @@ task usercontrol() {
 		int z = (vexRT[joyTurnRight] - vexRT[joyTurnLeft]) * 127 + (vexRT[joyTurnRightSlow] - vexRT[joyTurnLeftSlow]) * 50;
 
 		calculateShooter();
-		if (time1[T3] < 300) {shooterMotorRaw = 127;} //Set the power briefly to max after shooting a ball
+		if (time1[T3] < 300) {shooterMotorRaw = 767;} //Set the power briefly to max after shooting a ball
 		//The global shooterMotorRaw holds the power globally. it is passed to setShooterMotors. setShooterMotors should
 		//accept the power and set the motors accordingly
 		setShooterMotors(shooterMotorRaw);  //set the shooter motor's power
@@ -267,14 +274,23 @@ task usercontrol() {
 		}
 		else if (vexRT[joyShooterFull] == 1) {
 			manualSetSpeed = defaultManualSpeed;
+			//targetSpeed = optimalSpeed;
+		} //shooter button if statements
+
+		//MANAL SPEED INCREMENT
+		if (vexRT[joyShooterSpIU] == 1) {
+			targetSpeed+= 0.05;
+
+			//Decrement the target
+		}
+		else if (vexRT[joyShooterSpID] == 1) {
+			targetSpeed-=0.05;
+			//Set the shooter speed to the optimal speed
+		}
+		else if (vexRT[joyShooterSpIR] == 1) {
 			targetSpeed = optimalSpeed;
 		} //shooter button if statements
 
-		//Display the last shooter time on the LCD
-		clearLCDLine(0);
-		string str;
-		stringFormat(str, "Timer:%ims",lastShootTime);
-		displayLCDCenteredString(0, str);
 
 		//Record the time since the last ball was shot
 		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
@@ -282,6 +298,7 @@ task usercontrol() {
 			writeDebugStreamLine("%i",lastShootTime);
 			clearTimer(T3);
 		}
+
 
 	}
 
