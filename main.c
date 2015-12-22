@@ -186,6 +186,7 @@ task autonomous() {
 	ready = false;
 	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
+	targetSpeed = optimalSpeed-0.5;
 	//Run only in auton mode and if auton is enabled
   while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
 		if (ready && state == 0) { //Robot is spinning up, 0 balls shot
@@ -222,6 +223,7 @@ task autonomous() {
 
 //--------------------Manual Control Loop--------------------//
 task usercontrol() {
+	targetSpeed = optimalSpeed;
 	SensorValue[shootSolenoid] = 0; //Set the shooter to open
 	manualSetSpeed = defaultManualSpeed;
 	setShooterMotors(0);
