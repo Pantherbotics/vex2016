@@ -64,13 +64,13 @@ int bumpLeft;int bumpRight;int mShooter2;int mShooter3;int mShooter4;int mShoote
 #define joyTurnLeftSlow Btn5D
 
 //Shooter buttons
-#define joyShooterZero Btn7L //Set the shooter speed to zero (E-STOP)
-#define joyShooterIncU Btn7U //Increment shooter speed
-#define joyShooterIncD Btn7D //Decrement the shooter speed
-#define joyShooterFull Btn7R //Set the shooter speed to the preset target
-#define joyShooterSpIU Btn8U
-#define joyShooterSpID Btn8D
-#define joyShooterSpIR Btn8R
+#define joyShooterZero Btn7L //Set the shooter power to zero (E-STOP)
+#define joyShooterIncU Btn7U //Increment shooter power
+#define joyShooterIncD Btn7D //Decrement the shooter power
+#define joyShooterFull Btn7R //Set the shooter power to the preset target
+#define joyShooterSpIU Btn8U //Increment the target speed
+#define joyShooterSpID Btn8D //Decrememt the target speed
+#define joyShooterSpIR Btn8R //Trigger the shooter solenoid manually
 
 //Pneumatics Buttons
 #define joyRampActivate  Btn8L //Activates the ramp solenoids
