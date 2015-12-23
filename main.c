@@ -160,6 +160,7 @@ void calculateShooter() {
 
 //Takes manual joystick inputs to control solenoids
 void solenoidsManual() {
+	SensorValue[shootSolenoid] = vexRT[joyShooterSpIR];
 	if (vexRT[joyRampActivate] ) {
 		SensorValue[rampSolenoidA] = 1; //Set the state of the ramp
 		SensorValue[rampSolenoidB] = 1; //Set the state of the ramp
@@ -182,6 +183,7 @@ void pre_auton() {
 	SensorValue[rampSolenoidA] = 0;
 	SensorValue[rampSolenoidB] = 0;
 
+
 }
 
 //--------------------Autonomous mode--------------------//
@@ -193,7 +195,7 @@ task autonomous() {
 	ready = false;
 	speedAverages = 0;
 	manualSetSpeed = defaultManualSpeed;
-	targetSpeed = optimalSpeed-1;
+	targetSpeed = optimalSpeed-1.5;
 	//Run only in auton mode and if auton is enabled
   while (bIfiAutonomousMode && !bIfiRobotDisabled && !SensorValue[autonJumper]) {
 		if (ready && state == 0) { //Robot is spinning up, 0 balls shot
@@ -202,6 +204,7 @@ task autonomous() {
 			state = 1;
 
 		}else if (state == 1){     //Robot is spun up, >= 1 ball shot
+		  targetSpeed = optimalSpeed-1
 	 		SensorValue[shootSolenoid] = 1;
 			clearTimer(T1);
 			state = 2;
@@ -264,12 +267,12 @@ task usercontrol() {
 			//Increment the target
 		}
 		else if (vexRT[joyShooterIncU] == 1) {
-			manualSetSpeed+= 0.5;
+			manualSetSpeed+= 1;
 
 			//Decrement the target
 		}
 		else if (vexRT[joyShooterIncD] == 1) {
-			manualSetSpeed-=0.5;
+			manualSetSpeed-=1;
 			//Set the shooter speed to the optimal speed
 		}
 		else if (vexRT[joyShooterFull] == 1) {
@@ -279,18 +282,14 @@ task usercontrol() {
 
 		//MANAL SPEED INCREMENT
 		if (vexRT[joyShooterSpIU] == 1) {
-			targetSpeed+= 0.05;
+			targetSpeed+= 0.2;
 
 			//Decrement the target
 		}
 		else if (vexRT[joyShooterSpID] == 1) {
-			targetSpeed-=0.05;
+			targetSpeed-=0.2;
 			//Set the shooter speed to the optimal speed
 		}
-		else if (vexRT[joyShooterSpIR] == 1) {
-			targetSpeed = optimalSpeed;
-		} //shooter button if statements
-
 
 		//Record the time since the last ball was shot
 		if (SensorValue[ballDetect] <= ballDetectThreshold && time1[T3] > 800) {
